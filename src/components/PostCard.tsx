@@ -44,7 +44,7 @@ export function PostCard({
     return (
       <Link href={href} className="group block relative">
         <div className="grid md:grid-cols-12 gap-6 md:gap-10 items-end">
-          <div className="md:col-span-7 space-y-5">
+          <div className="md:col-span-7 space-y-5 order-2 md:order-1">
             {category && (
               <div className="flex items-center gap-3">
                 <span className="stamp stamp-filled tilt-l">{category.name}</span>
@@ -68,7 +68,7 @@ export function PostCard({
             </div>
           </div>
 
-          <div className="md:col-span-5 relative">
+          <div className="md:col-span-5 relative order-1 md:order-2">
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-paper-alt border border-ink">
               {img && (
                 <Image
@@ -80,9 +80,6 @@ export function PostCard({
                   className="object-cover duo transition-transform duration-700 group-hover:scale-[1.04]"
                 />
               )}
-            </div>
-            <div className="absolute -top-3 -right-3 stamp stamp-filled tilt-lg-r shadow-page z-10">
-              ฉบับนี้
             </div>
           </div>
         </div>

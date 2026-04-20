@@ -59,3 +59,117 @@ export function ArrowRight(props: IconProps) {
     </svg>
   );
 }
+
+/* ───── Commodity icons (monoline, for price widget) ───── */
+
+function CommodityBase({
+  children,
+  ...props
+}: IconProps & { children: React.ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      {...props}
+    >
+      {children}
+    </svg>
+  );
+}
+
+export function RiceIcon(props: IconProps) {
+  // Rice stalk with grains
+  return (
+    <CommodityBase {...props}>
+      <path d="M16 4v24" />
+      <path d="M16 8c-3 0-5 2-5 4.5S13 17 16 17" />
+      <path d="M16 8c3 0 5 2 5 4.5S19 17 16 17" />
+      <path d="M16 14c-3 0-5 2-5 4.5S13 23 16 23" />
+      <path d="M16 14c3 0 5 2 5 4.5S19 23 16 23" />
+    </CommodityBase>
+  );
+}
+
+export function ChickenIcon(props: IconProps) {
+  return (
+    <CommodityBase {...props}>
+      <path d="M20 7a4 4 0 1 0-6 3.5" />
+      <circle cx="22" cy="6" r="1.2" fill="currentColor" stroke="none" />
+      <path d="M24 8l2-1" />
+      <path d="M14 10c-3 0-6 3-6 7 0 4 3 8 8 8h4c3 0 5-2 5-5 0-6-4-10-11-10z" />
+      <path d="M13 25l-1 3" />
+      <path d="M18 25l1 3" />
+    </CommodityBase>
+  );
+}
+
+export function PigIcon(props: IconProps) {
+  return (
+    <CommodityBase {...props}>
+      <ellipse cx="16" cy="17" rx="10" ry="7" />
+      <circle cx="13" cy="16" r="0.8" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="16" r="0.8" fill="currentColor" stroke="none" />
+      <ellipse cx="16" cy="19" rx="2.5" ry="1.8" />
+      <circle cx="15" cy="19" r="0.4" fill="currentColor" stroke="none" />
+      <circle cx="17" cy="19" r="0.4" fill="currentColor" stroke="none" />
+      <path d="M8 12l-1-2M24 12l1-2" />
+      <path d="M9 23v2M13 24v2M19 24v2M23 23v2" />
+    </CommodityBase>
+  );
+}
+
+export function EggIcon(props: IconProps) {
+  return (
+    <CommodityBase {...props}>
+      <path d="M16 4c-5 0-9 6-9 13s4 11 9 11 9-4 9-11-4-13-9-13z" />
+    </CommodityBase>
+  );
+}
+
+export function FishIcon(props: IconProps) {
+  return (
+    <CommodityBase {...props}>
+      <path d="M4 16c3-5 8-7 12-7 5 0 9 3 11 7-2 4-6 7-11 7-4 0-9-2-12-7z" />
+      <path d="M26 16l4-3v6l-4-3z" fill="currentColor" stroke="none" opacity="0.2" />
+      <path d="M26 16l4-3v6z" />
+      <circle cx="10" cy="14" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M15 14c1.5 1 1.5 3 0 4M18 13c2 1.5 2 4 0 6" opacity="0.6" />
+    </CommodityBase>
+  );
+}
+
+export function LeafIcon(props: IconProps) {
+  return (
+    <CommodityBase {...props}>
+      <path d="M7 25c0-10 7-17 18-18-0 11-8 18-18 18z" />
+      <path d="M7 25c4-4 9-7 15-10" />
+    </CommodityBase>
+  );
+}
+
+export function CitrusIcon(props: IconProps) {
+  return (
+    <CommodityBase {...props}>
+      <circle cx="16" cy="18" r="9" />
+      <path d="M16 9V6" />
+      <path d="M14 6l2-2 2 2" />
+      <path d="M16 18l-6-4M16 18l6-4M16 18l-6 4M16 18l6 4M16 18l-8 0M16 18l8 0" opacity="0.35" />
+    </CommodityBase>
+  );
+}
+
+export function GarlicIcon(props: IconProps) {
+  return (
+    <CommodityBase {...props}>
+      <path d="M16 3c-1 2-1 3-1 4" />
+      <path d="M16 7c-6 0-9 5-9 10 0 6 4 10 9 10s9-4 9-10c0-5-3-10-9-10z" />
+      <path d="M16 7c-2 2-3 6-3 10s1 8 3 10" opacity="0.35" />
+      <path d="M16 7c2 2 3 6 3 10s-1 8-3 10" opacity="0.35" />
+    </CommodityBase>
+  );
+}

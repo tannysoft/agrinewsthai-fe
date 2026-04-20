@@ -4,6 +4,12 @@ import type { Metadata } from "next";
 import { getTagBySlug, getPostsByTag, getTags, stripHtml } from "@/lib/wp";
 import { PostCard } from "@/components/PostCard";
 import { Pagination } from "@/components/Pagination";
+import { JsonLd } from "@/components/JsonLd";
+import {
+  SITE_URL,
+  breadcrumbSchema,
+  tagCategoryToCollection,
+} from "@/lib/schema";
 
 export const revalidate = 300;
 
@@ -13,11 +19,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const tag = await getTagBySlug(slug);
   if (!tag) return { title: "ไม่พบแท็ก" };
+  const description =
+    stripHtml(tag.description) ||
+    `บทความที่แท็กด้วย #${tag.name} จากเรื่องเล่าข่าวเกษตร`;
+  const url = `${SITE_URL}/tag/${slug}`;
   return {
     title: `#${tag.name}`,
-    description:
-      stripHtml(tag.description) ||
-      `บทความที่แท็กด้วย #${tag.name} จากเรื่องเล่าข่าวเกษตร`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title: `#${tag.name}`,
+      description,
+      locale: "th_TH",
+    },
   };
 }
 
@@ -35,8 +51,19 @@ export default async function TagPage({ params }: Props) {
 
   const relatedTags = relatedTagsRes.data.filter((t) => t.id !== tag.id).slice(0, 10);
 
+  const url = `${SITE_URL}/tag/${slug}`;
+  const schemas = [
+    tagCategoryToCollection(tag, url),
+    breadcrumbSchema([
+      { name: "หน้าแรก", url: SITE_URL },
+      { name: "แท็กทั้งหมด", url: `${SITE_URL}/tags` },
+      { name: `#${tag.name}`, url },
+    ]),
+  ];
+
   return (
     <>
+      <JsonLd data={schemas} />
       <section className="bg-moss-900 text-paper border-b-4 border-lime">
         <div className="mx-auto max-w-[1400px] px-6 py-14 md:py-20 grid md:grid-cols-12 gap-8 items-end">
           <div className="md:col-span-8">
