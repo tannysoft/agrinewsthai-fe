@@ -297,7 +297,6 @@ body::before {
   text-align: center;
   margin-top: 0.75em;
   padding-top: 0.5em;
-  border-top: 1px solid rgba(10, 15, 6, 0.2);
   max-width: 80%;
   margin-left: auto;
   margin-right: auto;
