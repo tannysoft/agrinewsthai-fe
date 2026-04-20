@@ -8,6 +8,7 @@ import {
 import "./globals.css";
 import { Masthead } from "@/components/Masthead";
 import { Colophon } from "@/components/Colophon";
+import { CookieNotice } from "@/components/CookieNotice";
 import { Ticker } from "@/components/Ticker";
 import { JsonLd } from "@/components/JsonLd";
 import { getCategories, getPosts } from "@/lib/wp";
@@ -109,6 +110,7 @@ export default async function RootLayout({
         <Ticker posts={tickerPosts} />
         <main className="flex-1 relative z-[2]">{children}</main>
         <Colophon categories={categories} />
+        <CookieNotice />
       </body>
     </html>
   );
