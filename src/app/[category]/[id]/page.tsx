@@ -16,6 +16,15 @@ import {
 import { PostCard } from "@/components/PostCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { FacebookIcon, LineIcon, XIcon } from "@/components/icons";
+import { PriceWidgetMini } from "@/components/PriceWidgetMini";
+import { JsonLd } from "@/components/JsonLd";
+import { getRankMathHead } from "@/lib/rankmath";
+import {
+  SITE_NAME,
+  SITE_URL,
+  breadcrumbSchema,
+  newsArticleSchema,
+} from "@/lib/schema";
 
 export const revalidate = 300;
 
@@ -27,25 +36,65 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!Number.isFinite(postId) || postId <= 0) return { title: "ไม่พบบทความ" };
   const post = await getPostById(postId);
   if (!post) return { title: "ไม่พบบทความ" };
-  const title = stripHtml(post.title.rendered);
-  const description = stripHtml(post.excerpt.rendered).slice(0, 180);
-  const img = getFeaturedImage(post, "large");
+
+  // Pull Rank Math metadata (OG image, description) from the rendered WP page
+  // so we stay in sync with what editors set in the SEO plugin.
+  const rankMath = await getRankMathHead(post.link);
+
+  const stripSuffix = (s?: string) =>
+    s?.replace(/\s+[»&].*$/, "").trim() ?? undefined;
+  const title =
+    stripSuffix(rankMath?.ogTitle) ||
+    stripSuffix(rankMath?.title) ||
+    stripHtml(post.title.rendered);
+  const description =
+    rankMath?.ogDescription ||
+    rankMath?.description ||
+    stripHtml(post.excerpt.rendered).slice(0, 180);
+  const fallbackImg = getFeaturedImage(post, "large");
+  const imgUrl = rankMath?.ogImage || fallbackImg?.src;
+  const imgW = rankMath?.ogImageWidth ?? fallbackImg?.width ?? 1200;
+  const imgH = rankMath?.ogImageHeight ?? fallbackImg?.height ?? 675;
+  const canonical = `${SITE_URL}${getPostHref(post)}`;
+
+  const tags = (post._embedded?.["wp:term"]?.flat() ?? [])
+    .filter((t) => t.taxonomy === "post_tag")
+    .map((t) => t.name);
+  const category = getPrimaryCategory(post);
+  const author = getAuthor(post);
+
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
       type: "article",
-      publishedTime: post.date,
-      modifiedTime: post.modified,
-      images: img ? [{ url: img.src, width: img.width, height: img.height }] : [],
+      url: canonical,
+      siteName: SITE_NAME,
+      locale: "th_TH",
+      publishedTime: rankMath?.articlePublishedTime || post.date,
+      modifiedTime: rankMath?.articleModifiedTime || post.modified,
+      authors: author ? [author.name] : undefined,
+      section: category?.name,
+      tags,
+      images: imgUrl
+        ? [
+            {
+              url: imgUrl,
+              width: imgW,
+              height: imgH,
+              alt: rankMath?.ogImageAlt || stripHtml(post.title.rendered),
+            },
+          ]
+        : [],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: img ? [img.src] : [],
+      images: imgUrl ? [imgUrl] : [],
     },
   };
 }
@@ -81,10 +130,25 @@ export default async function PostPage({ params }: Props) {
     ? await getPosts({ perPage: 6, categories: category.id, exclude: post.id })
     : { data: [] };
 
-  const shareUrl = `https://agrinewsthai.com${canonical}`;
+  const shareUrl = `https://www.agrinewsthai.com${canonical}`;
+
+  // SEO: Pull Rank Math metadata for consistent schema
+  const rankMath = await getRankMathHead(post.link);
+
+  const schemas = [
+    newsArticleSchema(post, rankMath),
+    breadcrumbSchema([
+      { name: "หน้าแรก", url: SITE_URL },
+      ...(category
+        ? [{ name: category.name, url: `${SITE_URL}/${category.slug}` }]
+        : []),
+      { name: title, url: `${SITE_URL}${canonical}` },
+    ]),
+  ];
 
   return (
     <article className="relative">
+      <JsonLd data={schemas} />
       {/* ARTICLE MASTHEAD */}
       <header className="relative bg-paper border-b-2 border-ink">
         <div className="mx-auto max-w-[1400px] px-6 pt-10 md:pt-16 pb-12 md:pb-20 grid md:grid-cols-12 gap-10">
@@ -245,6 +309,14 @@ export default async function PostPage({ params }: Props) {
                 <div className="mt-3 issue-num text-sm text-ink">
                   {formatThaiDate(post.date)}
                 </div>
+              </div>
+
+              {/* Daily agricultural prices — compact widget */}
+              <div>
+                <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-moss-700 mb-3">
+                  Daily Prices
+                </div>
+                <PriceWidgetMini />
               </div>
             </div>
           </aside>

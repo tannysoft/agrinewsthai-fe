@@ -233,18 +233,54 @@ export async function getPostsByTag(params: {
 
 /* ---------- helpers for rendered WP HTML ---------- */
 
+const NAMED_ENTITIES: Record<string, string> = {
+  nbsp: " ",
+  amp: "&",
+  quot: '"',
+  apos: "'",
+  lt: "<",
+  gt: ">",
+  hellip: "…",
+  mdash: "—",
+  ndash: "–",
+  lsquo: "‘",
+  rsquo: "’",
+  ldquo: "“",
+  rdquo: "”",
+  laquo: "«",
+  raquo: "»",
+  middot: "·",
+  bull: "•",
+  copy: "©",
+  reg: "®",
+  trade: "™",
+};
+
+export function decodeEntities(str: string): string {
+  return (
+    str
+      // numeric decimal: &#8211; → en dash
+      .replace(/&#(\d+);/g, (_, n) => {
+        const code = parseInt(n, 10);
+        return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+      })
+      // numeric hex: &#x2013; → en dash
+      .replace(/&#x([0-9a-f]+);/gi, (_, n) => {
+        const code = parseInt(n, 16);
+        return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+      })
+      // named: &amp; &nbsp; etc
+      .replace(/&([a-zA-Z][a-zA-Z0-9]+);/g, (m, name) =>
+        Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, name)
+          ? NAMED_ENTITIES[name]
+          : m
+      )
+  );
+}
+
 export function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#8217;/g, "’")
-    .replace(/&#8216;/g, "‘")
-    .replace(/&#8220;/g, "“")
-    .replace(/&#8221;/g, "”")
-    .replace(/&hellip;/g, "…")
-    .replace(/\[&hellip;\]/g, "…")
+  return decodeEntities(html.replace(/<[^>]*>/g, ""))
+    .replace(/\[\s*…\s*\]/g, "…")
     .replace(/\s+/g, " ")
     .trim();
 }

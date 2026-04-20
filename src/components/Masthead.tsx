@@ -81,16 +81,21 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
         </div>
       </div>
 
-      {/* Wordmark */}
+      {/* Wordmark — symmetric flex so the logo stays centered regardless of
+          the button-group width on the right. */}
       <div className="mx-auto max-w-[1400px] px-6 pt-5 pb-4 md:pt-8 md:pb-6">
-        <div className="flex items-center justify-between gap-6">
-          <div className="hidden md:flex flex-col gap-0.5 text-[10px] uppercase tracking-[0.25em] text-ink/60 font-[var(--font-stamp)]">
-            <span>A Thai</span>
-            <span>Agricultural</span>
-            <span className="text-moss-700">· NEWS ·</span>
+        <div className="flex items-center gap-4 md:gap-6">
+          {/* LEFT — slogan on desktop, empty spacer on mobile */}
+          <div className="flex-1 min-w-0 flex items-center">
+            <div className="hidden md:flex flex-col gap-0.5 text-[10px] uppercase tracking-[0.25em] text-ink/60 font-[var(--font-stamp)]">
+              <span>A Thai</span>
+              <span>Agricultural</span>
+              <span className="text-moss-700">· NEWS ·</span>
+            </div>
           </div>
 
-          <Link href="/" className="block group flex-1 md:flex-none text-center">
+          {/* CENTER — logo (shrink-0 so flex-1 sides balance around it) */}
+          <Link href="/" className="block group shrink-0 text-center">
             <Image
               src="/logo.svg"
               alt="เรื่องเล่าข่าวเกษตร"
@@ -104,32 +109,45 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
             </div>
           </Link>
 
-          <div className="hidden md:flex items-center gap-3">
+          {/* RIGHT — desktop button group + mobile hamburger */}
+          <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
+            <div className="hidden md:flex items-center gap-2">
+              <Link
+                href="/prices"
+                className="group inline-flex items-center gap-2 px-4 h-11 rounded-full text-sm font-medium border border-ink hover:bg-lime transition-colors whitespace-nowrap"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-moss-500 opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-moss-700" />
+                </span>
+                ราคาสินค้าเกษตรวันนี้
+              </Link>
+              <Link
+                href="/latest"
+                className="inline-flex items-center gap-2 bg-ink text-paper px-4 h-11 rounded-full text-sm font-medium hover:bg-moss-700 transition-colors whitespace-nowrap"
+              >
+                อ่านล่าสุด
+                <span aria-hidden>→</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="h-11 w-11 shrink-0 grid place-items-center border border-ink rounded-full hover:bg-lime transition-colors"
+                aria-label="ค้นหา"
+              >
+                <SearchIcon className="h-4 w-4" />
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="h-11 w-11 grid place-items-center border border-ink rounded-full hover:bg-lime transition-colors"
-              aria-label="ค้นหา"
+              className="md:hidden h-10 w-10 grid place-items-center border border-ink rounded-full"
+              aria-label="เปิดเมนู"
             >
-              <SearchIcon className="h-4 w-4" />
+              <MenuIcon className="h-4 w-4" />
             </button>
-            <Link
-              href="/latest"
-              className="inline-flex items-center gap-2 bg-ink text-paper px-4 h-11 rounded-full text-sm font-medium hover:bg-moss-700 transition-colors"
-            >
-              อ่านล่าสุด
-              <span aria-hidden>→</span>
-            </Link>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="md:hidden h-10 w-10 grid place-items-center border border-ink rounded-full"
-            aria-label="เปิดเมนู"
-          >
-            <MenuIcon className="h-4 w-4" />
-          </button>
         </div>
       </div>
 
@@ -180,19 +198,19 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
                 </button>
               </div>
 
-              <form onSubmit={onSubmit} className="flex items-end gap-3 border-b-2 border-ink pb-2">
-                <span className="font-[var(--font-stamp)] text-ink/50 pb-2 tracking-wider">→</span>
+              <form onSubmit={onSubmit} className="flex items-end gap-2 md:gap-3 border-b-2 border-ink pb-2 w-full min-w-0">
+                <span className="hidden sm:inline font-[var(--font-stamp)] text-ink/50 pb-2 tracking-wider shrink-0">→</span>
                 <input
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   type="search"
-                  placeholder="ข้าวหอมมะลิ · ปศุสัตว์ · ดินเปรี้ยว …"
-                  className="flex-1 bg-transparent font-display text-2xl md:text-4xl font-bold placeholder:text-ink/30 focus:outline-none py-2"
+                  placeholder="ค้นหา…"
+                  className="flex-1 min-w-0 bg-transparent font-display text-lg md:text-4xl font-bold placeholder:text-ink/30 focus:outline-none py-2"
                 />
                 <button
                   type="submit"
-                  className="font-[var(--font-stamp)] uppercase tracking-widest text-sm bg-ink text-paper px-5 py-2.5 hover:bg-moss-700"
+                  className="shrink-0 font-[var(--font-stamp)] uppercase tracking-widest text-xs md:text-sm bg-ink text-paper px-4 md:px-5 py-2.5 hover:bg-moss-700"
                 >
                   ค้นหา
                 </button>
@@ -206,6 +224,7 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
                   <ul className="space-y-2 text-lg font-display font-semibold">
                     <li><Link href="/" className="hover:text-moss-700">หน้าแรก</Link></li>
                     <li><Link href="/latest" className="hover:text-moss-700">ข่าวล่าสุด</Link></li>
+                    <li><Link href="/prices" className="hover:text-moss-700">ราคาสินค้าเกษตร</Link></li>
                     <li><Link href="/tags" className="hover:text-moss-700">แท็กทั้งหมด</Link></li>
                     <li><Link href="/about" className="hover:text-moss-700">เกี่ยวกับเรา</Link></li>
                     <li><Link href="/contact" className="hover:text-moss-700">ติดต่อ</Link></li>

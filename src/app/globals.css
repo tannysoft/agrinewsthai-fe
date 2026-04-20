@@ -70,93 +70,130 @@ body::before {
   color: var(--color-ink);
 }
 
-/* Utility: hairline divider */
-.hairline {
-  background-image: linear-gradient(to right, var(--color-ink) 50%, transparent 50%);
-  background-size: 8px 1px;
-  background-repeat: repeat-x;
-}
+/* Custom component classes — placed in the `components` layer so Tailwind
+ * utilities (hidden, block, etc.) in the `utilities` layer naturally win. */
+@layer components {
+  .hairline {
+    background-image: linear-gradient(to right, var(--color-ink) 50%, transparent 50%);
+    background-size: 8px 1px;
+    background-repeat: repeat-x;
+  }
 
-.hairline-v {
-  background-image: linear-gradient(to bottom, var(--color-ink) 50%, transparent 50%);
-  background-size: 1px 8px;
-  background-repeat: repeat-y;
-}
+  .hairline-v {
+    background-image: linear-gradient(to bottom, var(--color-ink) 50%, transparent 50%);
+    background-size: 1px 8px;
+    background-repeat: repeat-y;
+  }
 
-/* Highlighter marker sweep on hover */
-.marker {
-  background-image: linear-gradient(
-    to bottom,
-    transparent 60%,
-    var(--color-lime) 60%,
-    var(--color-lime) 92%,
-    transparent 92%
-  );
-  background-repeat: no-repeat;
-  background-size: 0% 100%;
-  transition: background-size 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
-  padding: 0 0.05em;
-}
-.group:hover .marker,
-.marker:hover,
-.marker.is-active {
-  background-size: 100% 100%;
-}
+  .marker {
+    background-image: linear-gradient(
+      to bottom,
+      transparent 60%,
+      var(--color-lime) 60%,
+      var(--color-lime) 92%,
+      transparent 92%
+    );
+    background-repeat: no-repeat;
+    background-size: 0% 100%;
+    transition: background-size 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+    padding: 0 0.05em;
+  }
+  .group:hover .marker,
+  .marker:hover,
+  .marker.is-active {
+    background-size: 100% 100%;
+  }
 
-/* Stamp — rotated postal-style badge */
-.stamp {
-  font-family: var(--font-stamp);
-  letter-spacing: 0.04em;
-  border: 1.5px solid currentColor;
-  padding: 0.3em 0.9em 0.25em;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  position: relative;
-  display: inline-block;
-  background: transparent;
-}
-.stamp::before,
-.stamp::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border: 1px dashed currentColor;
-  border-radius: inherit;
-  opacity: 0.35;
-  margin: 3px;
-  pointer-events: none;
-}
-.stamp.stamp-filled {
-  background: var(--color-lime);
-  color: var(--color-ink);
-  border-color: var(--color-ink);
-}
+  .stamp {
+    font-family: var(--font-stamp);
+    letter-spacing: 0.04em;
+    border: 1.5px solid currentColor;
+    margin-left: 1px;
+    padding: 0.3em 0.9em 0.25em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    position: relative;
+    display: inline-block;
+    background: transparent;
+  }
+  .stamp::before,
+  .stamp::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px dashed currentColor;
+    border-radius: inherit;
+    opacity: 0.35;
+    margin: 3px;
+    pointer-events: none;
+  }
+  .stamp.stamp-filled {
+    background: var(--color-lime);
+    color: var(--color-ink);
+    border-color: var(--color-ink);
+  }
 
-/* Postage stamp — with perforated scalloped edges */
-.postage-stamp {
-  --p: 6px;
-  background-color: var(--color-sun);
-  color: var(--color-ink);
-  padding: calc(var(--p) + 6px) calc(var(--p) + 12px);
-  position: relative;
-  font-family: var(--font-stamp);
-  display: inline-block;
-  filter: drop-shadow(4px 6px 0 rgba(10, 15, 6, 0.2));
-  --mask:
-    radial-gradient(circle var(--p) at var(--p) var(--p), #0000 98%, #000)
-      calc(var(--p) * -1) calc(var(--p) * -1);
-  -webkit-mask: var(--mask);
-  mask: var(--mask);
-  -webkit-mask-size: calc(var(--p) * 2) calc(var(--p) * 2);
-  mask-size: calc(var(--p) * 2) calc(var(--p) * 2);
-}
-.postage-stamp::before {
-  content: "";
-  position: absolute;
-  inset: calc(var(--p) + 2px);
-  border: 1.5px dashed var(--color-ink);
-  opacity: 0.5;
-  pointer-events: none;
+  .postage-stamp {
+    --p: 6px;
+    background-color: var(--color-sun);
+    color: var(--color-ink);
+    padding: calc(var(--p) + 6px) calc(var(--p) + 12px);
+    position: relative;
+    font-family: var(--font-stamp);
+    display: inline-block;
+    filter: drop-shadow(4px 6px 0 rgba(10, 15, 6, 0.2));
+    --mask:
+      radial-gradient(circle var(--p) at var(--p) var(--p), #0000 98%, #000)
+        calc(var(--p) * -1) calc(var(--p) * -1);
+    -webkit-mask: var(--mask);
+    mask: var(--mask);
+    -webkit-mask-size: calc(var(--p) * 2) calc(var(--p) * 2);
+    mask-size: calc(var(--p) * 2) calc(var(--p) * 2);
+  }
+  .postage-stamp::before {
+    content: "";
+    position: absolute;
+    inset: calc(var(--p) + 2px);
+    border: 1.5px dashed var(--color-ink);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Split-flap / flight-board price flip */
+  .flip-price {
+    display: inline-flex;
+    font-variant-numeric: tabular-nums;
+    perspective: 400px;
+  }
+  .flip-char {
+    display: inline-block;
+    min-width: 0.58em;
+    text-align: center;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .flip-char:not(.is-settled) {
+    color: var(--color-moss-700);
+    filter: blur(0.3px);
+  }
+  .flip-char.is-settled {
+    animation: flap-land 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+    transform-origin: 50% 100%;
+  }
+  @keyframes flap-land {
+    0% {
+      transform: rotateX(-80deg) translateY(-30%);
+      opacity: 0;
+    }
+    60% {
+      transform: rotateX(12deg) translateY(4%);
+      opacity: 1;
+    }
+    100% {
+      transform: rotateX(0deg) translateY(0);
+      opacity: 1;
+    }
+  }
 }
 
 /* Ticker */
@@ -297,7 +334,6 @@ body::before {
   text-align: center;
   margin-top: 0.75em;
   padding-top: 0.5em;
-  border-top: 1px solid rgba(10, 15, 6, 0.2);
   max-width: 80%;
   margin-left: auto;
   margin-right: auto;

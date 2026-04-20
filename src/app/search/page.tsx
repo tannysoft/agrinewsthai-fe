@@ -34,18 +34,18 @@ export default async function SearchPage({ searchParams }: Props) {
             พิมพ์คำที่คุณสงสัย
           </h1>
 
-          <form className="mt-8 max-w-3xl flex items-end gap-4 border-b-2 border-ink pb-2">
-            <span className="font-[var(--font-stamp)] text-ink/50 pb-3 tracking-wider">→</span>
+          <form className="mt-8 max-w-3xl w-full min-w-0 flex items-end gap-2 md:gap-4 border-b-2 border-ink pb-2">
+            <span className="hidden sm:inline font-[var(--font-stamp)] text-ink/50 pb-3 tracking-wider shrink-0">→</span>
             <input
               type="search"
               name="q"
               defaultValue={q}
-              placeholder="ข้าวหอมมะลิ · ปศุสัตว์ · ดินเปรี้ยว …"
-              className="flex-1 bg-transparent font-display text-xl md:text-2xl font-bold placeholder:text-ink/30 focus:outline-none py-2"
+              placeholder="พิมพ์คำค้น…"
+              className="flex-1 min-w-0 bg-transparent font-display text-lg md:text-2xl font-bold placeholder:text-ink/30 focus:outline-none py-2"
             />
             <button
               type="submit"
-              className="font-[var(--font-stamp)] uppercase tracking-widest text-sm bg-ink text-paper px-6 py-3 hover:bg-moss-700"
+              className="shrink-0 font-[var(--font-stamp)] uppercase tracking-widest text-xs md:text-sm bg-ink text-paper px-4 md:px-6 py-3 hover:bg-moss-700"
             >
               ค้นหา
             </button>

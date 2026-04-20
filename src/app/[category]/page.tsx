@@ -3,6 +3,12 @@ import type { Metadata } from "next";
 import { getCategoryBySlug, getPosts, stripHtml } from "@/lib/wp";
 import { PostCard } from "@/components/PostCard";
 import { Pagination } from "@/components/Pagination";
+import { JsonLd } from "@/components/JsonLd";
+import {
+  SITE_URL,
+  breadcrumbSchema,
+  tagCategoryToCollection,
+} from "@/lib/schema";
 
 export const revalidate = 300;
 
@@ -12,11 +18,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category } = await params;
   const cat = await getCategoryBySlug(category);
   if (!cat) return { title: "ไม่พบหมวดหมู่" };
+  const description =
+    stripHtml(cat.description) ||
+    `ข่าวและบทความในหมวด ${cat.name} จากเรื่องเล่าข่าวเกษตร`;
+  const url = `${SITE_URL}/${category}`;
   return {
     title: cat.name,
-    description:
-      stripHtml(cat.description) ||
-      `ข่าวและบทความในหมวด ${cat.name} จากเรื่องเล่าข่าวเกษตร`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title: cat.name,
+      description,
+      locale: "th_TH",
+    },
   };
 }
 
@@ -40,8 +56,18 @@ export default async function CategoryPage({ params }: Props) {
 
   const [lead, second, ...rest] = posts;
 
+  const url = `${SITE_URL}/${slug}`;
+  const schemas = [
+    tagCategoryToCollection(cat, url),
+    breadcrumbSchema([
+      { name: "หน้าแรก", url: SITE_URL },
+      { name: cat.name, url },
+    ]),
+  ];
+
   return (
     <>
+      <JsonLd data={schemas} />
       {/* HEADER */}
       <section className="bg-ink text-paper border-b-4 border-lime">
         <div className="mx-auto max-w-[1400px] px-6 py-14 md:py-20 grid md:grid-cols-12 gap-8 items-end">

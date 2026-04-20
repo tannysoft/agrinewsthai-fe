@@ -73,8 +73,8 @@ export function Colophon({ categories }: { categories: WPCategory[] }) {
               A Thai Agricultural News · Est. 2005
             </div>
             <p className="mt-5 max-w-md text-sm text-paper/70 leading-relaxed">
-              ปูมบันทึกข่าวสาร ความรู้ และภูมิปัญญาการเกษตรไทย
-              จัดพิมพ์ทุกสัปดาห์ — ทุกเรื่องบนหน้านี้ ผ่านการคัดกรองโดยกองบรรณาธิการ
+              ข่าวสาร ความรู้ และภูมิปัญญาการเกษตรไทย
+              — ทุกเรื่องเว็บไซต์นี้ ผ่านการคัดกรองโดยกองบรรณาธิการ
               เพื่อให้อ่านแล้วนำไปใช้ได้จริง
             </p>
           </div>
@@ -118,6 +118,11 @@ export function Colophon({ categories }: { categories: WPCategory[] }) {
               <li>
                 <Link href="/latest" className="hover:text-lime after-arrow font-display">
                   ข่าวล่าสุด
+                </Link>
+              </li>
+              <li>
+                <Link href="/prices" className="hover:text-lime after-arrow font-display">
+                  ราคาสินค้าเกษตร
                 </Link>
               </li>
               <li>

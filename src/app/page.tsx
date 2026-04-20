@@ -12,6 +12,7 @@ import {
 import { PostCard } from "@/components/PostCard";
 import { SectionHeader } from "@/components/SectionHeader";
 import { HeroSlider } from "@/components/HeroSlider";
+import { PriceWidget } from "@/components/PriceWidget";
 
 export const revalidate = 300;
 
@@ -150,6 +151,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* DAILY PRICES — DIT commodity prices */}
+      <PriceWidget />
 
       {/* FIELD NOTES — numbered compact grid */}
       <section className="relative">
@@ -527,7 +531,7 @@ export default async function HomePage() {
       <section className="bg-paper">
         <div className="mx-auto max-w-[1400px] px-6 py-16 md:py-24">
           <div className="mx-auto max-w-4xl relative bg-paper-alt border-2 border-ink p-8 md:p-14 crop-marks">
-            <div className="absolute -top-4 -left-4 stamp stamp-filled tilt-lg-l">ส่งทางไปรษณีย์</div>
+            <div className="absolute -top-4 -left-4 stamp stamp-filled tilt-lg-l">ส่งทางอีเมลล์</div>
             <div className="absolute -top-4 -right-4 hidden md:block">
               <div className="stamp tilt-lg-r bg-paper font-[var(--font-stamp)]">
                 <div className="text-[10px] leading-none mb-1">THAILAND</div>
@@ -535,7 +539,7 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-moss-700">
-              Postcard № 001 · Subscribe
+              Newsletter № 001 · Subscribe
             </div>
             <h2 className="mt-3 font-display font-extrabold text-3xl md:text-4xl leading-[1.05] tracking-[-0.01em]">
               ส่งข่าวเกษตร<br />ถึงหน้าบ้านทุกสัปดาห์
