@@ -58,17 +58,6 @@ body {
     background-size: 100% 1px;
   }
 
-  /* Section-title rule: a row of seedlings, alternating leaf tones like a planted furrow */
-  .seedling-row {
-    background-image:
-      radial-gradient(circle at 3px 4px, var(--color-shoot) 2px, transparent 2.5px),
-      radial-gradient(circle at 3px 4px, var(--color-sprout) 1.5px, transparent 2px);
-    background-size: 18px 8px, 18px 8px;
-    background-position: 0 0, 9px 0;
-    background-repeat: repeat-x;
-    opacity: 0.55;
-  }
-
   .scroll-row {
     scrollbar-width: none;
   }

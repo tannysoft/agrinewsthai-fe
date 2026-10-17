@@ -22,6 +22,8 @@ import { FacebookIcon, LineIcon, XIcon } from "@/components/icons";
 import { PriceWidgetMini } from "@/components/PriceWidgetMini";
 import { PreferredSourceButton, PreferredSourceCard } from "@/components/PreferredSource";
 import { JsonLd } from "@/components/JsonLd";
+import { TopicLinkBox } from "@/components/TopicLink";
+import { topicForTags } from "@/lib/topics";
 import { getRankMathHead } from "@/lib/rankmath";
 import {
   SITE_NAME,
@@ -130,6 +132,7 @@ export default async function PostPage({ params }: Props) {
   const category = getPrimaryCategory(post);
   const terms: WPTerm[] = post._embedded?.["wp:term"]?.flat() ?? [];
   const tags = terms.filter((t) => t.taxonomy === "post_tag");
+  const topic = topicForTags(tags.map((t) => t.name));
   const mins = readingTime(post.content.rendered);
   const published = post.date_gmt + "Z";
   const modified = post.modified_gmt ? post.modified_gmt + "Z" : post.modified;
@@ -251,6 +254,8 @@ export default async function PostPage({ params }: Props) {
               ))}
             </div>
           )}
+
+          {topic && <TopicLinkBox topic={topic} />}
 
           <div className="mt-8 flex flex-col gap-4 rounded-lg border border-line p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>

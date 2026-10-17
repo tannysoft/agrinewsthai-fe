@@ -29,12 +29,10 @@ export function SectionHeader({
           <SproutIcon className="h-7 w-7 md:h-8 md:w-8" />
           {title}
         </h2>
-        {/* A planted row running out to the link */}
-        <span className="seedling-row hidden h-2 flex-1 sm:block" aria-hidden />
         {href && (
           <Link
             href={href}
-            className="ml-auto shrink-0 text-[15px] font-semibold text-leaf hover:underline underline-offset-4 sm:ml-0"
+            className="ml-auto shrink-0 text-[15px] font-semibold text-leaf hover:underline underline-offset-4"
           >
             {linkLabel}
           </Link>

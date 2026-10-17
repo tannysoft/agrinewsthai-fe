@@ -427,3 +427,31 @@ export function formatRelative(iso: string): string {
   if (day < 7) return `${day} วันที่แล้ว`;
   return formatThaiDate(iso);
 }
+
+/** A tag by its exact display name (WP's search is a substring match). */
+export async function getTagByName(name: string) {
+  const { data } = await getTags({ perPage: 20, search: name });
+  return data.find((t) => t.name === name) ?? null;
+}
+
+export type WPPage = {
+  id: number;
+  slug: string;
+  modified: string;
+  title: WPRendered;
+  content: WPRendered;
+};
+
+/** A published WordPress Page by slug, or null. */
+export async function getPageBySlug(slug: string): Promise<WPPage | null> {
+  try {
+    const { data } = await wpFetch<WPPage[]>(
+      "/pages",
+      { slug, _fields: "id,slug,modified,title,content" },
+      { revalidate: 600, tags: [`wp-page-${slug}`] }
+    );
+    return data[0] ?? null;
+  } catch {
+    return null;
+  }
+}
