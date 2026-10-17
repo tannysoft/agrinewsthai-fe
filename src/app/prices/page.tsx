@@ -8,11 +8,13 @@ import {
   priceDateShort,
   DITPriceRecord,
 } from "@/lib/dit";
-import { FlipPrice } from "@/components/FlipPrice";
+import { ArchiveHeader } from "@/components/ArchiveHeader";
+import { CropPriceCards } from "@/components/CropPriceCards";
 
 export const revalidate = 3600; // refresh hourly
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/prices" },
   title: "ราคาสินค้าเกษตรรายวัน",
   description:
     "ติดตามราคาขายปลีก/ขายส่งสินค้าเกษตร — ข้าว ผัก ผลไม้ เนื้อสัตว์ สัตว์น้ำ อัปเดตรายวันจากกรมการค้าภายใน",
@@ -43,146 +45,105 @@ export default async function PricesPage({ searchParams }: Props) {
     .map((r) => (r?.price_date ? new Date(r.price_date).getTime() : 0))
     .reduce((a, b) => Math.max(a, b), 0);
 
+  const tab = (active: boolean) =>
+    `h-10 px-5 inline-flex items-center rounded-full text-[15px] font-semibold transition-colors ${
+      active ? "bg-leaf text-white" : "text-ink-2 hover:text-leaf"
+    }`;
+
   return (
     <>
-      <section className="bg-paper border-b-2 border-ink">
-        <div className="mx-auto max-w-[1400px] px-6 py-12 md:py-20 grid md:grid-cols-12 gap-8 items-end">
-          <div className="md:col-span-8">
-            <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-moss-700">
-              § Daily Prices · ราคาสินค้าเกษตร
-            </div>
-            <h1 className="mt-3 font-display font-extrabold leading-[1] tracking-[-0.02em] text-[clamp(2.25rem,5vw,4rem)] text-ink">
-              ราคาสินค้าเกษตรวันนี้
-            </h1>
-            <p className="mt-4 max-w-2xl text-ink-soft text-sm md:text-base leading-relaxed">
-              ราคาขายปลีกและขายส่งสินค้าเกษตร อัปเดตรายวันจาก
-              กรมการค้าภายใน กระทรวงพาณิชย์
-              {latestDate > 0 && (
-                <>
-                  {" "}
-                  · อัปเดตล่าสุด {priceDateShort(new Date(latestDate).toISOString())}
-                </>
-              )}
-            </p>
-          </div>
-          <div className="md:col-span-4 md:text-right">
-            <div className="inline-flex border-2 border-ink">
-              <Link
-                href="/prices?type=retail"
-                className={`font-[var(--font-stamp)] uppercase tracking-widest text-xs px-4 py-2.5 transition-colors ${
-                  type === "retail"
-                    ? "bg-ink text-paper"
-                    : "bg-paper text-ink hover:bg-lime"
-                }`}
-              >
-                ขายปลีก
-              </Link>
-              <Link
-                href="/prices?type=wholesale"
-                className={`font-[var(--font-stamp)] uppercase tracking-widest text-xs px-4 py-2.5 border-l-2 border-ink transition-colors ${
-                  type === "wholesale"
-                    ? "bg-ink text-paper"
-                    : "bg-paper text-ink hover:bg-lime"
-                }`}
-              >
-                ขายส่ง
-              </Link>
-            </div>
+      <ArchiveHeader
+        title="ราคาสินค้าเกษตรวันนี้"
+        description={`ราคา${type === "retail" ? "ขายปลีก" : "ขายส่ง"}สินค้าเกษตรในกรุงเทพฯ จากกรมการค้าภายใน กระทรวงพาณิชย์${
+          latestDate > 0 ? ` อัปเดต ${priceDateShort(new Date(latestDate).toISOString())}` : ""
+        }`}
+      >
+        <div className="mt-6 inline-flex rounded-full bg-paper p-1 ring-1 ring-line">
+          <Link href="/prices?type=retail" className={tab(type === "retail")} aria-current={type === "retail" ? "page" : undefined}>
+            ขายปลีก
+          </Link>
+          <Link href="/prices?type=wholesale" className={tab(type === "wholesale")} aria-current={type === "wholesale" ? "page" : undefined}>
+            ขายส่ง
+          </Link>
+        </div>
+      </ArchiveHeader>
+
+      <section className="border-b border-line">
+        <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-8 md:py-10">
+          <h2 className="font-heading font-bold text-xl text-ink">ราคาพืชผลประจำวัน</h2>
+          <p className="mt-1 text-sm text-ink-3">กดเพื่อดูกราฟย้อนหลังและราคาแยกตามพื้นที่</p>
+          <div className="mt-4">
+            <CropPriceCards />
           </div>
         </div>
       </section>
 
-      {/* Group tabs */}
-      <section className="bg-paper-alt border-b-2 border-ink">
-        <div className="mx-auto max-w-[1400px] px-6 py-4 overflow-x-auto">
-          <div className="flex gap-2 whitespace-nowrap">
+      <nav aria-label="กลุ่มสินค้า" className="border-b border-line">
+        <div className="mx-auto max-w-[1400px] px-4 md:px-6">
+          <ul className="scroll-row flex gap-1 overflow-x-auto py-3">
             {groups.map((g) => {
               const active = g.group_id === currentGroupId;
               return (
-                <Link
-                  key={g.group_id}
-                  href={`/prices?type=${type}&group=${g.group_id}`}
-                  className={`font-display font-semibold text-sm px-4 py-2 border transition-colors ${
-                    active
-                      ? "bg-ink text-paper border-ink"
-                      : "bg-paper text-ink border-ink/30 hover:bg-lime hover:border-ink"
-                  }`}
-                >
-                  {g.group_name}
-                </Link>
+                <li key={g.group_id} className="shrink-0">
+                  <Link
+                    href={`/prices?type=${type}&group=${g.group_id}`}
+                    aria-current={active ? "page" : undefined}
+                    className={`block rounded-full px-4 py-2 text-sm whitespace-nowrap transition-colors ${
+                      active ? "bg-field text-leaf font-semibold ring-1 ring-shoot" : "text-ink-2 hover:bg-field"
+                    }`}
+                  >
+                    {g.group_name}
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
-      </section>
+      </nav>
 
-      {/* Table */}
-      <section className="mx-auto max-w-[1400px] px-6 py-10 md:py-14">
+      <section className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 md:py-12">
         {currentGroup && (
-          <div className="flex items-end justify-between gap-4 pb-4 mb-6 border-b border-ink">
-            <h2 className="font-display font-bold text-xl md:text-2xl leading-snug">
-              {currentGroup.group_name}
-            </h2>
-            <span className="issue-num text-[11px] uppercase tracking-widest text-ink-muted">
-              {visibleProducts.length} / {products.length} รายการ
+          <div className="flex items-baseline justify-between gap-4 mb-5">
+            <h2 className="font-heading font-bold text-2xl text-ink">{currentGroup.group_name}</h2>
+            <span className="text-sm text-ink-3">
+              {visibleProducts.length < products.length
+                ? `แสดง ${visibleProducts.length} จาก ${products.length} รายการ`
+                : `${products.length} รายการ`}
             </span>
           </div>
         )}
 
         {visibleProducts.length === 0 ? (
-          <p className="text-center py-16 text-ink-muted">
-            ยังไม่มีข้อมูลในหมวดนี้
-          </p>
+          <p className="py-16 text-center text-ink-2">กลุ่มนี้ยังไม่มีข้อมูลราคา ลองเลือกกลุ่มอื่นด้านบน</p>
         ) : (
-          <div className="overflow-x-auto border border-ink">
-            <table className="w-full border-collapse">
-              <thead className="bg-ink text-paper font-[var(--font-stamp)] text-[11px] uppercase tracking-widest">
+          <div className="overflow-x-auto rounded-lg ring-1 ring-line">
+            <table className="w-full border-collapse text-left">
+              <thead className="bg-field text-sm text-ink-2">
                 <tr>
-                  <th className="text-left px-4 py-3 w-12">№</th>
-                  <th className="text-left px-4 py-3">รายการสินค้า</th>
-                  <th className="text-right px-4 py-3">ราคา (ต่ำ – สูง)</th>
-                  <th className="text-left px-4 py-3 hidden sm:table-cell">หน่วย</th>
-                  <th className="text-right px-4 py-3 hidden md:table-cell">
-                    อัปเดต
-                  </th>
+                  <th scope="col" className="px-4 py-3 font-semibold">สินค้า</th>
+                  <th scope="col" className="px-4 py-3 font-semibold text-right">ราคา (ต่ำสุด–สูงสุด)</th>
+                  <th scope="col" className="px-4 py-3 font-semibold hidden sm:table-cell">หน่วย</th>
+                  <th scope="col" className="px-4 py-3 font-semibold hidden md:table-cell text-right">วันที่</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink/15">
+              <tbody className="divide-y divide-line">
                 {visibleProducts.map((p, i) => {
                   const rec: DITPriceRecord | null = priceRecords[i];
                   return (
-                    <tr
-                      key={p.product_id}
-                      className="hover:bg-lime/40 transition-colors"
-                    >
-                      <td className="px-4 py-3 issue-num text-xs text-ink-muted">
-                        {String(i + 1).padStart(2, "0")}
-                      </td>
-                      <td className="px-4 py-3 font-display font-semibold text-sm md:text-[15px] text-ink">
+                    <tr key={p.product_id} className="hover:bg-field/60">
+                      <td className="px-4 py-3.5 text-ink">
                         {p.product_name}
                         {rec?.product_desc && (
-                          <span className="block text-xs text-ink-muted font-normal mt-0.5">
-                            {rec.product_desc}
-                          </span>
+                          <span className="block text-sm text-ink-3 mt-0.5">{rec.product_desc}</span>
                         )}
+                        {rec?.unit && <span className="block text-xs text-ink-3 sm:hidden">{rec.unit}</span>}
                       </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        {rec ? (
-                          <FlipPrice
-                            value={formatPrice(rec)}
-                            className="font-display font-extrabold text-base md:text-lg text-moss-900"
-                          />
-                        ) : (
-                          <span className="text-ink-muted">—</span>
-                        )}
+                      <td className="px-4 py-3.5 text-right whitespace-nowrap font-heading font-bold text-lg text-leaf tabular-nums">
+                        {rec ? formatPrice(rec) : <span className="font-sans font-normal text-sm text-ink-3">ไม่มีข้อมูล</span>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-ink-muted hidden sm:table-cell">
-                        {rec?.unit ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 issue-num text-[11px] uppercase tracking-widest text-ink-muted hidden md:table-cell text-right whitespace-nowrap">
-                        {rec?.price_date
-                          ? priceDateShort(rec.price_date)
-                          : "—"}
+                      <td className="px-4 py-3.5 text-sm text-ink-2 hidden sm:table-cell">{rec?.unit ?? "–"}</td>
+                      <td className="px-4 py-3.5 text-sm text-ink-3 hidden md:table-cell text-right whitespace-nowrap">
+                        {rec?.price_date ? priceDateShort(rec.price_date) : "–"}
                       </td>
                     </tr>
                   );
@@ -192,18 +153,12 @@ export default async function PricesPage({ searchParams }: Props) {
           </div>
         )}
 
-        <p className="mt-8 text-xs text-ink-muted text-center max-w-2xl mx-auto">
-          ที่มาข้อมูล:{" "}
-          <a
-            href="https://pricelist.dit.go.th/"
-            target="_blank"
-            rel="noreferrer"
-            className="underline hover:text-moss-700"
-          >
-            กรมการค้าภายใน กระทรวงพาณิชย์ (DIT)
+        <p className="mt-6 text-sm text-ink-3">
+          ที่มา{" "}
+          <a href="https://pricelist.dit.go.th/" target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-leaf">
+            กรมการค้าภายใน กระทรวงพาณิชย์
           </a>{" "}
-          · ราคาที่แสดงเป็นราคา {type === "retail" ? "ขายปลีก" : "ขายส่ง"}{" "}
-          ในกรุงเทพฯ และอาจแตกต่างตามพื้นที่
+          ราคาในต่างจังหวัดอาจแตกต่างจากนี้
         </p>
       </section>
     </>

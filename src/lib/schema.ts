@@ -9,7 +9,8 @@ import {
   WPPost,
   WPCategory,
   WPTag,
-  getAuthor,
+  getBylineName,
+  getExcerpt,
   getFeaturedImage,
   getPrimaryCategory,
   getPostHref,
@@ -20,6 +21,8 @@ import type { RankMathHead } from "./rankmath";
 export const SITE_URL = "https://www.agrinewsthai.com";
 export const SITE_NAME = "เรื่องเล่าข่าวเกษตร";
 export const SITE_LOGO = `${SITE_URL}/logo.svg`;
+/** Google requires a raster publisher logo for news results; app/icon.png is 512×512. */
+export const SITE_LOGO_RASTER = `${SITE_URL}/icon.png`;
 
 export type JsonLd = Record<string, unknown>;
 
@@ -35,10 +38,10 @@ export function organizationSchema(): JsonLd {
     logo: {
       "@type": "ImageObject",
       "@id": `${SITE_URL}/#logo`,
-      url: SITE_LOGO,
-      contentUrl: SITE_LOGO,
-      width: 904,
-      height: 311,
+      url: SITE_LOGO_RASTER,
+      contentUrl: SITE_LOGO_RASTER,
+      width: 512,
+      height: 512,
       caption: SITE_NAME,
     },
     image: { "@id": `${SITE_URL}/#logo` },
@@ -89,16 +92,18 @@ export function newsArticleSchema(
     stripSuffix(rankMath?.title) ||
     stripHtml(post.title.rendered);
   const description =
-    rankMath?.ogDescription ||
-    rankMath?.description ||
-    stripHtml(post.excerpt.rendered);
+    (rankMath?.ogDescription || rankMath?.description || getExcerpt(post, 250))
+      .replace(/\u00a0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
   const img =
     rankMath?.ogImage ||
     getFeaturedImage(post, "large")?.src ||
-    `${SITE_URL}/logo.svg`;
+    SITE_LOGO_RASTER;
   const imgW = rankMath?.ogImageWidth ?? 1200;
   const imgH = rankMath?.ogImageHeight ?? 675;
-  const author = getAuthor(post);
+  const byline = getBylineName(post);
+  const isEditorial = byline === "กองบรรณาธิการ";
   const category = getPrimaryCategory(post);
   const tags = (post._embedded?.["wp:term"]?.flat() ?? [])
     .filter((t) => t.taxonomy === "post_tag")
@@ -124,13 +129,10 @@ export function newsArticleSchema(
       width: imgW,
       height: imgH,
     },
-    author: author
-      ? {
-          "@type": "Person",
-          name: author.name,
-          url: `${SITE_URL}/author/${author.slug}`,
-        }
-      : { "@type": "Organization", name: SITE_NAME },
+    // Login names ("opabo") are not shown publicly; credit the newsroom instead.
+    author: isEditorial
+      ? { "@type": "Organization", name: `${byline} ${SITE_NAME}`, url: `${SITE_URL}/about` }
+      : { "@type": "Person", name: byline },
     publisher: { "@id": `${SITE_URL}/#organization` },
     isPartOf: { "@id": `${SITE_URL}/#website` },
   };

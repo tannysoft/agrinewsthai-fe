@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { CROPS } from "@/lib/crops";
 import type { ReactNode } from "react";
 import {
   HOME_PRICE_ITEMS,
   formatPrice,
   getDITLatestPrices,
-  priceDateShort,
+  type DITPriceRecord,
   type HomePriceItem,
 } from "@/lib/dit";
 import {
@@ -17,9 +18,8 @@ import {
   PigIcon,
   RiceIcon,
 } from "./icons";
-import { FlipPrice } from "./FlipPrice";
 
-const ICON_MAP: Record<HomePriceItem["icon"], (p: { className?: string }) => ReactNode> = {
+export const PRICE_ICONS: Record<HomePriceItem["icon"], (p: { className?: string }) => ReactNode> = {
   rice: RiceIcon,
   chicken: ChickenIcon,
   pig: PigIcon,
@@ -30,84 +30,70 @@ const ICON_MAP: Record<HomePriceItem["icon"], (p: { className?: string }) => Rea
   garlic: GarlicIcon,
 };
 
-export async function PriceWidget() {
-  const records = await getDITLatestPrices(HOME_PRICE_ITEMS.map((i) => i.id));
-  const latestDate = records
+export function latestPriceDate(records: (DITPriceRecord | null)[]): string | null {
+  const ts = records
     .map((r) => (r?.price_date ? new Date(r.price_date).getTime() : 0))
     .reduce((a, b) => Math.max(a, b), 0);
+  if (!ts) return null;
+  return new Date(ts).toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** Home page: a horizontal strip of today's prices, directly under the hero. */
+export async function PriceWidget() {
+  const records = await getDITLatestPrices(HOME_PRICE_ITEMS.map((i) => i.id));
+  const updated = latestPriceDate(records);
 
   return (
-    <section className="bg-paper border-y-2 border-ink">
-      <div className="mx-auto max-w-[1400px] px-6 py-12 md:py-16">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 pb-6 mb-8 border-b-2 border-ink">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2 font-[var(--font-stamp)] text-[11px] tracking-[0.3em] uppercase text-moss-700">
-              <span className="issue-num text-ink-muted border border-ink px-2 py-0.5">
-                § 00
-              </span>
-              <span>Daily Prices · ราคาสินค้าเกษตรวันนี้</span>
-              <span className="relative hidden sm:flex h-2 w-2 ml-1">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-moss-500 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-moss-700" />
-              </span>
-            </div>
-            <h2 className="font-display font-extrabold text-2xl md:text-4xl leading-[1.05] tracking-[-0.015em] text-ink">
-              ราคาขายปลีกวันนี้
-            </h2>
-            {latestDate > 0 && (
-              <p className="mt-2 issue-num text-[11px] uppercase tracking-widest text-ink-muted">
-                Updated · {priceDateShort(new Date(latestDate).toISOString())} ·
-                ที่มา: กรมการค้าภายใน
-              </p>
-            )}
-          </div>
-          <Link
-            href="/prices"
-            className="group shrink-0 font-[var(--font-stamp)] text-xs uppercase tracking-[0.25em] border-b border-ink pb-1 after-arrow"
-          >
-            ดูราคาทั้งหมด
-          </Link>
+    <section aria-labelledby="prices-heading" className="bg-field border-b border-line">
+      <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-6 md:py-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 mb-4">
+          <h2 id="prices-heading" className="font-heading font-bold text-xl text-leaf">
+            ราคาขายปลีกวันนี้
+          </h2>
+          <p className="text-sm text-ink-3">
+            {updated ? `ข้อมูลกรมการค้าภายใน ${updated}` : "ข้อมูลกรมการค้าภายใน"}
+            <Link href="/prices" className="ml-4 font-semibold text-leaf hover:underline underline-offset-4">
+              ดูราคาทั้งหมด
+            </Link>
+          </p>
         </div>
 
-        {/* Grid of commodities */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-ink border border-ink">
+        <ul className="scroll-row -mx-4 px-4 md:mx-0 md:px-0 flex md:grid md:grid-cols-4 lg:grid-cols-8 gap-3 overflow-x-auto snap-x">
           {HOME_PRICE_ITEMS.map((item, i) => {
             const rec = records[i];
-            const Icon = ICON_MAP[item.icon];
+            const Icon = PRICE_ICONS[item.icon];
             return (
-              <Link
-                key={item.id}
-                href="/prices"
-                className="group bg-paper hover:bg-lime transition-colors p-4 md:p-5 flex flex-col min-h-[7.5rem]"
-              >
-                <div className="flex items-center gap-3 mb-auto">
-                  <Icon className="h-7 w-7 md:h-8 md:w-8 shrink-0 text-moss-700 group-hover:text-ink transition-colors" />
-                  <span className="font-display font-semibold text-sm md:text-[15px] leading-tight text-ink line-clamp-2 pt-0.5">
-                    {item.label}
+              <li key={item.id} className="snap-start shrink-0 w-[10.5rem] md:w-auto">
+                <Link
+                  href="/prices"
+                  className="flex h-full flex-col rounded-lg border border-line bg-paper p-3.5 hover:border-shoot transition-colors"
+                >
+                  <span className="flex items-start gap-2">
+                    <Icon className="h-6 w-6 shrink-0 text-shoot" />
+                    <span className="text-[13px] leading-snug text-ink-2 line-clamp-2">{item.label}</span>
                   </span>
-                </div>
-                <div className="mt-3 pt-3 border-t border-ink/15">
-                  {rec ? (
-                    <>
-                      <FlipPrice
-                        value={formatPrice(rec)}
-                        className="font-display font-extrabold text-lg md:text-xl leading-none text-moss-900"
-                      />
-                      <div className="issue-num text-[10px] uppercase tracking-widest text-ink-muted mt-1.5">
-                        {rec.unit}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="issue-num text-[11px] text-ink-muted uppercase">
-                      — no data —
-                    </div>
-                  )}
-                </div>
-              </Link>
+                  <span className="mt-auto pt-3 font-heading font-bold text-xl leading-none text-ink tabular-nums">
+                    {rec ? formatPrice(rec) : "ไม่มีข้อมูล"}
+                  </span>
+                  {rec && <span className="mt-1 text-xs text-ink-3">{rec.unit}</span>}
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
+
+        <p className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-2 text-sm">
+          <span className="mr-2 font-semibold text-ink-2">ราคาพืชผลวันนี้</span>
+          {CROPS.map((c) => (
+            <Link
+              key={c.slug}
+              href={`/prices/${c.slug}`}
+              className="rounded-full bg-paper px-3 py-1 text-leaf ring-1 ring-line hover:ring-leaf"
+            >
+              {c.name}
+            </Link>
+          ))}
+        </p>
       </div>
     </section>
   );

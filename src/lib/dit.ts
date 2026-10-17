@@ -91,13 +91,49 @@ export async function getDITPrices(
 export async function getDITLatestPrice(
   productId: string
 ): Promise<DITPriceRecord | null> {
-  const records = await getDITPrices(productId);
+  const records = (await getDITPrices(productId)).filter(hasPrice);
   if (!records.length) return null;
   // Records typically come ascending by date; pick latest
   const sorted = [...records].sort(
     (a, b) => new Date(b.price_date).getTime() - new Date(a.price_date).getTime()
   );
   return sorted[0] ?? null;
+}
+
+/** DIT keeps rows for days with no trading (e.g. durian off-season) with empty prices. */
+export function hasPrice(r: DITPriceRecord): boolean {
+  const ok = (v: unknown) => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v));
+  return ok(r.product_min) || ok(r.product_max);
+}
+
+/** Middle of the day's min–max range; one number per day for charts and day-on-day change. */
+export function midPrice(r: DITPriceRecord): number {
+  const vals = [r.product_min, r.product_max]
+    .filter((v) => v !== null && v !== undefined && v !== "")
+    .map(Number)
+    .filter(Number.isFinite);
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+export type DITSeries = {
+  latest: DITPriceRecord | null;
+  previous: DITPriceRecord | null;
+  /** Ascending by date, priced days only. */
+  history: DITPriceRecord[];
+};
+
+/** A product's priced history over the last `days` days plus its two most recent prices. */
+export async function getDITSeries(productId: string, days = 90): Promise<DITSeries> {
+  const from = new Date();
+  from.setDate(from.getDate() - days);
+  const history = (await getDITPrices(productId, { from: from.toISOString().slice(0, 10) }))
+    .filter(hasPrice)
+    .sort((a, b) => a.price_date.localeCompare(b.price_date));
+  return {
+    latest: history.at(-1) ?? null,
+    previous: history.at(-2) ?? null,
+    history,
+  };
 }
 
 /** Fetch many latest prices in parallel. */
@@ -110,8 +146,11 @@ export async function getDITLatestPrices(
 /** Human helpers */
 
 export function formatPrice(rec: DITPriceRecord): string {
-  const min = Number(rec.product_min);
-  const max = Number(rec.product_max);
+  if (!hasPrice(rec)) return "—";
+  const num = (v: unknown) => (v === null || v === undefined || v === "" ? NaN : Number(v));
+  const min = num(rec.product_min);
+  const max = num(rec.product_max);
+  if (!Number.isFinite(min) && Number.isFinite(max)) return formatBaht(max);
   if (!Number.isFinite(min) && !Number.isFinite(max)) return "—";
   if (min === max || !Number.isFinite(max)) return formatBaht(min);
   return `${formatBaht(min)} – ${formatBaht(max)}`;

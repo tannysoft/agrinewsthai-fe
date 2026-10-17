@@ -49,6 +49,7 @@ export async function GET() {
     });
   }
   entries.push({ loc: `${SITE_ORIGIN}/page-sitemap.xml`, lastmod: now });
+  entries.push({ loc: `${SITE_ORIGIN}/news-sitemap.xml`, lastmod: latestMod ?? now });
 
   const xml = indexXml(entries);
   return new Response(xml, { headers: XML_HEADERS });

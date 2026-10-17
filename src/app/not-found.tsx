@@ -2,35 +2,19 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <section className="mx-auto max-w-[1400px] px-6 py-24 md:py-32 grid md:grid-cols-12 gap-10 items-center">
-      <div className="md:col-span-5 md:col-start-2">
-        <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-moss-700">
-          § Error — 404
-        </div>
-        <div className="mt-4 big-num text-[clamp(5rem,13vw,10rem)] tilt-lg-l inline-block">
-          404
-        </div>
-        <h1 className="mt-2 font-display font-extrabold text-3xl md:text-5xl leading-[1.05] tracking-[-0.015em]">
-          หน้าที่คุณตามหา<br />ไม่อยู่แล้ว
-        </h1>
-        <p className="mt-6 text-lg text-ink-soft max-w-md leading-relaxed">
-          อาจถูกย้าย เปลี่ยนชื่อ หรือยังไม่ได้เผยแพร่
-          ลองกลับไปหน้าแรก หรือค้นหาสิ่งที่ต้องการได้เลย
-        </p>
-        <div className="mt-10 flex flex-wrap gap-3">
-          <Link
-            href="/"
-            className="bg-ink text-paper font-[var(--font-stamp)] uppercase tracking-[0.25em] text-xs px-6 py-3.5 hover:bg-moss-700"
-          >
-            กลับหน้าแรก →
-          </Link>
-          <Link
-            href="/search"
-            className="border-2 border-ink font-[var(--font-stamp)] uppercase tracking-[0.25em] text-xs px-6 py-3.5 hover:bg-lime"
-          >
-            ค้นหา
-          </Link>
-        </div>
+    <section className="mx-auto max-w-[720px] px-4 md:px-6 py-20 md:py-28 text-center">
+      <p className="font-heading font-bold text-7xl md:text-8xl text-sprout">404</p>
+      <h1 className="mt-4 font-heading font-bold text-3xl md:text-4xl leading-snug text-ink">ไม่พบหน้านี้</h1>
+      <p className="mt-4 text-lg text-ink-2 leading-relaxed">
+        ลิงก์อาจเปลี่ยนหรือเรื่องถูกย้ายไปแล้ว ลองค้นหาด้วยหัวข้อที่สนใจ หรือกลับไปอ่านข่าวเกษตรที่หน้าแรก
+      </p>
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Link href="/" className="h-12 px-6 inline-flex items-center rounded-full bg-leaf text-white font-semibold hover:bg-leaf-deep">
+          กลับหน้าแรก
+        </Link>
+        <Link href="/search" className="h-12 px-6 inline-flex items-center rounded-full border border-line font-semibold text-leaf hover:border-leaf">
+          ค้นหา
+        </Link>
       </div>
     </section>
   );

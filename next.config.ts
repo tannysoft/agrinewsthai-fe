@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Old duplicate of พืชเศรษฐกิจ (SEO audit, Oct 2026) — must precede the generic /category rule.
+      { source: "/category/industrial-drop/:rest*", destination: "/economic-crops", permanent: true },
+      { source: "/industrial-drop/:rest*", destination: "/economic-crops", permanent: true },
+      // The "latest" listing was folded into the ข่าวเกษตร category.
+      { source: "/latest", destination: "/news", permanent: true },
+      { source: "/latest/page/:num", destination: "/news/page/:num", permanent: true },
       // Legacy `/category/{slug}` → new `/{slug}`
       {
         source: "/category/:slug",

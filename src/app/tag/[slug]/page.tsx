@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getTagBySlug, getPostsByTag, getTags, stripHtml } from "@/lib/wp";
 import { PostCard } from "@/components/PostCard";
 import { Pagination } from "@/components/Pagination";
+import { ArchiveHeader } from "@/components/ArchiveHeader";
 import { JsonLd } from "@/components/JsonLd";
 import {
   SITE_URL,
@@ -27,6 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `#${tag.name}`,
     description,
     alternates: { canonical: url },
+    // Tags with only a couple of stories are thin pages; keep them out of the index.
+    robots: tag.count < 3 ? { index: false, follow: true } : undefined,
     openGraph: {
       type: "website",
       url,
@@ -64,89 +67,43 @@ export default async function TagPage({ params }: Props) {
   return (
     <>
       <JsonLd data={schemas} />
-      <section className="bg-moss-900 text-paper border-b-4 border-lime">
-        <div className="mx-auto max-w-[1400px] px-6 py-14 md:py-20 grid md:grid-cols-12 gap-8 items-end">
-          <div className="md:col-span-8">
-            <div className="flex items-center gap-3">
-              <span className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-lime">
-                Tag · แท็ก
-              </span>
-              <span className="issue-num text-xs text-paper/60">
-                # {String(tag.id).padStart(4, "0")}
-              </span>
-            </div>
-            <h1 className="mt-4 font-display font-extrabold leading-[1] tracking-[-0.02em] text-[clamp(2.25rem,5.5vw,4.5rem)]">
-              <span className="text-lime">#</span>
-              {tag.name}
-            </h1>
-            {tag.description && (
-              <p className="mt-6 max-w-2xl text-paper/80 text-base md:text-lg leading-relaxed">
-                {stripHtml(tag.description)}
-              </p>
-            )}
-          </div>
-          <div className="md:col-span-4 md:text-right">
-            <div className="inline-block text-left border border-lime p-5">
-              <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-widest text-lime">
-                Archive
-              </div>
-              <div className="mt-2 issue-num text-3xl font-bold">
-                {total.toLocaleString("th-TH")}
-              </div>
-              <div className="issue-num text-[11px] uppercase tracking-widest text-paper/70">
-                Stories · Page {page} / {Math.max(totalPages, 1)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ArchiveHeader
+        title={`#${tag.name}`}
+        description={stripHtml(tag.description) || undefined}
+        total={total}
+        parent={{ label: "แท็กทั้งหมด", href: "/tags" }}
+      />
 
-      <section className="mx-auto max-w-[1400px] px-6 py-12 md:py-16">
+      <section className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 md:py-14">
         {posts.length === 0 ? (
-          <p className="text-ink-muted text-center py-20">
-            ยังไม่มีบทความภายใต้แท็กนี้
-          </p>
+          <p className="py-20 text-center text-ink-2">ยังไม่มีเรื่องในแท็กนี้</p>
         ) : (
-          <div className="grid gap-10 md:gap-12 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {posts.map((p, i) => (
               <PostCard key={p.id} post={p} variant="card" priority={i < 3} />
             ))}
           </div>
         )}
 
-        <Pagination
-          currentPage={page}
-          totalPages={Math.min(totalPages, 50)}
-          basePath={`/tag/${slug}`}
-        />
+        <Pagination currentPage={page} totalPages={Math.min(totalPages, 50)} basePath={`/tag/${slug}`} />
       </section>
 
       {relatedTags.length > 0 && (
-        <section className="bg-paper-alt border-t-2 border-ink">
-          <div className="mx-auto max-w-[1400px] px-6 py-12 md:py-14">
-            <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-moss-700 mb-5">
-              § Related Tags · แท็กที่ใกล้เคียง
-            </div>
-            <div className="flex flex-wrap gap-2">
+        <section className="border-t border-line">
+          <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 md:py-12">
+            <h2 className="font-heading font-bold text-xl text-ink">แท็กยอดนิยมอื่น</h2>
+            <ul className="mt-4 flex flex-wrap gap-2">
               {relatedTags.map((t) => (
-                <Link
-                  key={t.id}
-                  href={`/tag/${t.slug}`}
-                  className="font-display text-sm font-semibold bg-paper border border-ink px-3 py-1.5 hover:bg-lime transition-colors"
-                >
-                  #{t.name}
-                  <span className="issue-num text-[10px] ml-2 text-ink-muted">
-                    {t.count}
-                  </span>
-                </Link>
+                <li key={t.id}>
+                  <Link
+                    href={`/tag/${t.slug}`}
+                    className="inline-block rounded-full bg-field px-3.5 py-1.5 text-sm text-ink-2 hover:bg-leaf hover:text-white transition-colors"
+                  >
+                    {t.name}
+                  </Link>
+                </li>
               ))}
-              <Link
-                href="/tags"
-                className="font-[var(--font-stamp)] uppercase tracking-[0.25em] text-xs px-3 py-2 after-arrow ml-1"
-              >
-                ดูแท็กทั้งหมด
-              </Link>
-            </div>
+            </ul>
           </div>
         </section>
       )}

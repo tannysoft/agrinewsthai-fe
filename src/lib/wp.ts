@@ -38,6 +38,7 @@ export type WPPost = {
   date: string;
   date_gmt: string;
   modified: string;
+  modified_gmt?: string;
   slug: string;
   link: string;
   title: WPRendered;
@@ -104,6 +105,7 @@ export async function getPosts(params: {
   page?: number;
   perPage?: number;
   categories?: number | number[];
+  categoriesExclude?: number[];
   exclude?: number | number[];
   include?: number[];
   search?: string;
@@ -115,7 +117,7 @@ export async function getPosts(params: {
   fields?: string[];
   offset?: number;
 } = {}) {
-  const { categories, exclude, include, embed = true, fields, offset, ...rest } = params;
+  const { categories, categoriesExclude, exclude, include, embed = true, fields, offset, ...rest } = params;
   return wpFetch<WPPost[]>(
     "/posts",
     {
@@ -125,6 +127,7 @@ export async function getPosts(params: {
       page: params.page ?? 1,
       offset,
       categories: Array.isArray(categories) ? categories.join(",") : categories,
+      categories_exclude: categoriesExclude?.join(","),
       exclude: Array.isArray(exclude) ? exclude.join(",") : exclude,
       include: include?.join(","),
       search: rest.search,
@@ -285,6 +288,50 @@ export function stripHtml(html: string): string {
     .trim();
 }
 
+/**
+ * Clean excerpt for display / meta description: drops share-button text that
+ * leaks in from the_content ("FacebookFacebookXTwitterLINELine"), the trailing
+ * "[…]", and collapses &nbsp; and whitespace.
+ */
+export function getExcerpt(post: WPPost, max = 200): string {
+  const text = stripHtml(post.excerpt?.rendered ?? "")
+    .replace(/^(?:\s*(?:Facebook|X|Twitter|LINE|Line)\s*)+/, "")
+    .replace(/\s*…\s*$/, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
+/** True when an alt text is really an upload filename ("S 36413448", "852281005 107…"). */
+export function isFilenameAlt(alt: string): boolean {
+  const a = alt.trim();
+  if (!a) return true;
+  if (/[\u0E00-\u0E7F]/.test(a)) return false;
+  return /\d{5,}/.test(a) || /\.(jpe?g|png|webp|gif)$/i.test(a) || /^(img|image|dsc|photo|s)[\s_-]?\d+/i.test(a);
+}
+
+/**
+ * Prepare rendered post HTML for the page: lazy-load and async-decode
+ * images, and replace empty or filename-like alt text with a description
+ * derived from the headline.
+ */
+export function prepareContentHtml(html: string, title: string): string {
+  let n = 0;
+  const safeTitle = title.replace(/"/g, "&quot;");
+  return html.replace(/<img\b[^>]*>/gi, (tag) => {
+    n += 1;
+    let out = tag;
+    const m = out.match(/\salt=(["'])(.*?)\1/i);
+    const alt = `${safeTitle} ภาพที่ ${n}`;
+    if (!m) out = out.replace(/<img\b/i, `<img alt="${alt}"`);
+    else if (isFilenameAlt(decodeEntities(m[2]))) out = out.replace(m[0], ` alt="${alt}"`);
+    if (!/\sloading=/i.test(out)) out = out.replace(/<img\b/i, `<img loading="${n === 1 ? "eager" : "lazy"}"`);
+    if (!/\sdecoding=/i.test(out)) out = out.replace(/<img\b/i, '<img decoding="async"');
+    return out;
+  });
+}
+
 export function getFeaturedImage(
   post: WPPost,
   size: "medium" | "medium_large" | "large" | "full" = "medium_large"
@@ -293,7 +340,8 @@ export function getFeaturedImage(
   if (!media?.source_url) return null;
   const sized = media.media_details?.sizes?.[size];
   const full = media.media_details?.sizes?.full;
-  const alt = media.alt_text || stripHtml(post.title.rendered);
+  const alt =
+    media.alt_text && !isFilenameAlt(media.alt_text) ? media.alt_text : stripHtml(post.title.rendered);
   if (sized)
     return { src: sized.source_url, width: sized.width, height: sized.height, alt };
   if (full)
@@ -338,6 +386,17 @@ export function getAuthor(post: WPPost): WPAuthor | null {
   return post._embedded?.author?.[0] ?? null;
 }
 
+/**
+ * Byline for display. WP accounts here mostly use login names ("opabo"), so
+ * only show the author when it looks like a real display name (Thai script or
+ * a space); otherwise credit the editorial team.
+ */
+export function getBylineName(post: WPPost): string {
+  const name = getAuthor(post)?.name?.trim();
+  if (name && (/[\u0E00-\u0E7F]/.test(name) || name.includes(" "))) return name;
+  return "กองบรรณาธิการ";
+}
+
 export function formatThaiDate(iso: string): string {
   const d = new Date(iso);
   return new Intl.DateTimeFormat("th-TH", {
@@ -345,6 +404,14 @@ export function formatThaiDate(iso: string): string {
     month: "long",
     day: "numeric",
   }).format(d);
+}
+
+/** "16 ต.ค. 2569 เวลา 14:30 น." — Thai news-style timestamp. */
+export function formatThaiDateTime(iso: string): string {
+  const d = new Date(iso);
+  const date = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Bangkok" }).format(d);
+  const time = new Intl.DateTimeFormat("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Bangkok" }).format(d);
+  return `${date} เวลา ${time} น.`;
 }
 
 export function formatRelative(iso: string): string {
