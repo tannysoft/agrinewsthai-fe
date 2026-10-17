@@ -9,6 +9,8 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { PostCard } from "@/components/PostCard";
 import { PriceChart } from "@/components/PriceChart";
 import { JsonLd } from "@/components/JsonLd";
+import { TopicChip } from "@/components/TopicLink";
+import { topicForCrop } from "@/lib/topics";
 import { SITE_URL, breadcrumbSchema } from "@/lib/schema";
 
 // DIT publishes once per working day; hourly is plenty.
@@ -71,6 +73,7 @@ export default async function CropPricePage({ params }: Props) {
 
   const points = head.history.map((r) => ({ date: r.price_date.slice(0, 10), value: midPrice(r), range: formatPrice(r) }));
   const url = `${SITE_URL}/prices/${crop.slug}`;
+  const hub = topicForCrop(crop.slug);
 
   return (
     <>
@@ -99,7 +102,9 @@ export default async function CropPricePage({ params }: Props) {
         title={crop.title}
         description={`${crop.intro} อัปเดตทุกวันทำการจากกรมการค้าภายใน`}
         parent={{ label: "ราคาสินค้าเกษตร", href: "/prices" }}
-      />
+      >
+        {hub && <TopicChip topic={hub} />}
+      </ArchiveHeader>
 
       <section className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 md:py-12 grid gap-10 lg:grid-cols-12">
         {/* Headline price for the main series */}

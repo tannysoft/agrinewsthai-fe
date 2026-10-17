@@ -5,6 +5,8 @@ import { getTagBySlug, getPostsByTag, getTags, stripHtml } from "@/lib/wp";
 import { PostCard } from "@/components/PostCard";
 import { Pagination } from "@/components/Pagination";
 import { ArchiveHeader } from "@/components/ArchiveHeader";
+import { TopicChip } from "@/components/TopicLink";
+import { topicForTags } from "@/lib/topics";
 import { JsonLd } from "@/components/JsonLd";
 import {
   SITE_URL,
@@ -52,6 +54,7 @@ export default async function TagPage({ params }: Props) {
     getTags({ perPage: 12 }),
   ]);
 
+  const hub = topicForTags([tag.name]);
   const relatedTags = relatedTagsRes.data.filter((t) => t.id !== tag.id).slice(0, 10);
 
   const url = `${SITE_URL}/tag/${slug}`;
@@ -72,7 +75,9 @@ export default async function TagPage({ params }: Props) {
         description={stripHtml(tag.description) || undefined}
         total={total}
         parent={{ label: "แท็กทั้งหมด", href: "/tags" }}
-      />
+      >
+        {hub && <TopicChip topic={hub} />}
+      </ArchiveHeader>
 
       <section className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 md:py-14">
         {posts.length === 0 ? (
