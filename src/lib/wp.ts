@@ -285,6 +285,9 @@ export function stripHtml(html: string): string {
   return decodeEntities(html.replace(/<[^>]*>/g, ""))
     .replace(/\[\s*…\s*\]/g, "…")
     .replace(/\s+/g, " ")
+    // Stray spaces just inside curly quotes ("“น้ำข้าวหมาก ”")
+    .replace(/([“‘])\s+/g, "$1")
+    .replace(/\s+([”’])/g, "$1")
     .trim();
 }
 

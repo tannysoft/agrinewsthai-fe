@@ -168,55 +168,36 @@ export default async function PostPage({ params }: Props) {
 
       <div className="mx-auto max-w-[1400px] px-4 md:px-6 pt-6 md:pt-8 pb-14 grid gap-x-12 gap-y-12 lg:grid-cols-12">
         <article className="lg:col-span-8 min-w-0">
-          <nav aria-label="breadcrumb" className="text-sm">
-            <ol className="flex items-center gap-2 text-ink-3">
-              <li>
-                <Link href="/" className="hover:text-leaf">หน้าแรก</Link>
-              </li>
-              {category && (
-                <>
-                  <li aria-hidden>›</li>
-                  <li>
-                    <Link href={`/${category.slug}`} className="hover:text-leaf">
-                      {category.name}
-                    </Link>
-                  </li>
-                </>
-              )}
-            </ol>
-          </nav>
-
           {category && (
             <Link
               href={`/${category.slug}`}
-              className="mt-5 inline-block rounded bg-leaf px-2.5 py-1 text-[13px] font-semibold text-white hover:bg-leaf-deep"
+              className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-leaf hover:underline underline-offset-4"
             >
+              <SproutIcon className="h-5 w-5" />
               {category.name}
             </Link>
           )}
 
-          <h1 className="mt-3 font-heading font-bold text-[1.75rem] md:text-[2.35rem] leading-[1.4] text-ink">
+          <h1 className="mt-3 font-heading font-bold text-[1.9rem] md:text-[2.6rem] leading-[1.35] tracking-[-0.01em] text-ink">
             {title}
           </h1>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-y border-line py-3.5">
-            <div className="flex items-center gap-3 text-sm">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-field">
-                <Image src="/icon.png" alt="" width={28} height={28} className="h-7 w-7" />
-              </span>
-              <div className="leading-relaxed">
-                <p className="font-semibold text-ink">{getBylineName(post)}</p>
-                <p className="text-ink-3">
-                  <time dateTime={published}>{formatThaiDateTime(published)}</time>
-                  {wasUpdated && (
-                    <span className="ml-3">
-                      อัปเดต <time dateTime={modified}>{formatThaiDateTime(modified)}</time>
-                    </span>
-                  )}
-                  <span className="ml-3">อ่าน {mins} นาที</span>
-                </p>
-              </div>
-            </div>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line pb-5">
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-ink-3">
+              <span className="font-semibold text-ink">{getBylineName(post)}</span>
+              <MetaSep />
+              <time dateTime={published}>{formatThaiDateTime(published)}</time>
+              {wasUpdated && (
+                <>
+                  <MetaSep />
+                  <span>
+                    อัปเดต <time dateTime={modified}>{formatThaiDateTime(modified)}</time>
+                  </span>
+                </>
+              )}
+              <MetaSep />
+              <span>อ่าน {mins} นาที</span>
+            </p>
             <ShareButtons url={shareUrl} title={title} />
           </div>
 
@@ -323,6 +304,12 @@ export default async function PostPage({ params }: Props) {
       </div>
     </>
   );
+}
+
+/** Thin vertical rule between byline items. */
+function MetaSep() {
+  // Hidden on phones, where the line wraps and a rule would dangle at the end.
+  return <span className="hidden h-3.5 w-px bg-line sm:block" aria-hidden />;
 }
 
 function ShareButtons({ url, title }: { url: string; title: string }) {
