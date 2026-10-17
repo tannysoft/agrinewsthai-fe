@@ -1,22 +1,26 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import {
-  formatThaiDate,
-  getAuthor,
+  formatRelative,
+  formatThaiDateTime,
+  getBylineName,
+  getExcerpt,
   getFeaturedImage,
   getPostById,
   getPostHref,
   getPosts,
   getPrimaryCategory,
+  prepareContentHtml,
   stripHtml,
   WPTerm,
 } from "@/lib/wp";
 import { PostCard } from "@/components/PostCard";
-import { SectionHeader } from "@/components/SectionHeader";
+import { SectionHeader, SproutIcon } from "@/components/SectionHeader";
 import { FacebookIcon, LineIcon, XIcon } from "@/components/icons";
 import { PriceWidgetMini } from "@/components/PriceWidgetMini";
+import { PreferredSourceButton, PreferredSourceCard } from "@/components/PreferredSource";
 import { JsonLd } from "@/components/JsonLd";
 import { getRankMathHead } from "@/lib/rankmath";
 import {
@@ -29,6 +33,9 @@ import {
 export const revalidate = 300;
 
 type Props = { params: Promise<{ category: string; id: string }> };
+
+/** Collapse &nbsp; and stray whitespace that editors paste into Rank Math fields. */
+const tidy = (s: string) => s.replace(/ /g, " ").replace(/\s+/g, " ").trim();
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
@@ -43,14 +50,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const stripSuffix = (s?: string) =>
     s?.replace(/\s+[»&].*$/, "").trim() ?? undefined;
-  const title =
+  const title = tidy(
     stripSuffix(rankMath?.ogTitle) ||
-    stripSuffix(rankMath?.title) ||
-    stripHtml(post.title.rendered);
-  const description =
-    rankMath?.ogDescription ||
-    rankMath?.description ||
-    stripHtml(post.excerpt.rendered).slice(0, 180);
+      stripSuffix(rankMath?.title) ||
+      stripHtml(post.title.rendered)
+  );
+  const description = tidy(
+    rankMath?.ogDescription || rankMath?.description || getExcerpt(post, 160)
+  );
   const fallbackImg = getFeaturedImage(post, "large");
   const imgUrl = rankMath?.ogImage || fallbackImg?.src;
   const imgW = rankMath?.ogImageWidth ?? fallbackImg?.width ?? 1200;
@@ -61,7 +68,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .filter((t) => t.taxonomy === "post_tag")
     .map((t) => t.name);
   const category = getPrimaryCategory(post);
-  const author = getAuthor(post);
 
   return {
     title,
@@ -74,9 +80,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: canonical,
       siteName: SITE_NAME,
       locale: "th_TH",
-      publishedTime: rankMath?.articlePublishedTime || post.date,
+      publishedTime: rankMath?.articlePublishedTime || post.date_gmt + "Z",
       modifiedTime: rankMath?.articleModifiedTime || post.modified,
-      authors: author ? [author.name] : undefined,
+      authors: [getBylineName(post)],
       section: category?.name,
       tags,
       images: imgUrl
@@ -100,9 +106,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 function readingTime(html: string) {
-  const text = stripHtml(html);
-  const wordCount = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.round(wordCount / 180));
+  // Thai doesn't separate words with spaces, so estimate from characters
+  // (~500 Thai characters per minute for an average reader).
+  const chars = stripHtml(html).replace(/\s+/g, "").length;
+  return Math.max(1, Math.round(chars / 500));
 }
 
 export default async function PostPage({ params }: Props) {
@@ -113,27 +120,33 @@ export default async function PostPage({ params }: Props) {
   const post = await getPostById(postId);
   if (!post) notFound();
 
-  // Canonicalise: if URL category doesn't match the post's primary category,
-  // redirect to the canonical WordPress-style URL.
+  // Canonicalise: if the URL's category isn't the post's primary category
+  // (e.g. old /slide/{id} links), 308 to the canonical URL so search engines move over.
   const canonical = getPostHref(post);
-  if (canonical !== `/${categorySlug}/${post.id}`) redirect(canonical);
+  if (canonical !== `/${categorySlug}/${post.id}`) permanentRedirect(canonical);
 
   const title = stripHtml(post.title.rendered);
   const img = getFeaturedImage(post, "large");
   const category = getPrimaryCategory(post);
-  const author = getAuthor(post);
   const terms: WPTerm[] = post._embedded?.["wp:term"]?.flat() ?? [];
   const tags = terms.filter((t) => t.taxonomy === "post_tag");
   const mins = readingTime(post.content.rendered);
+  const published = post.date_gmt + "Z";
+  const modified = post.modified_gmt ? post.modified_gmt + "Z" : post.modified;
+  // Only show "updated" when the edit came well after publishing.
+  const wasUpdated = new Date(modified).getTime() - new Date(published).getTime() > 60 * 60 * 1000;
 
-  const { data: related } = category
-    ? await getPosts({ perPage: 6, categories: category.id, exclude: post.id })
-    : { data: [] };
+  const [{ data: related }, { data: latest }, rankMath] = await Promise.all([
+    category
+      ? getPosts({ perPage: 6, categories: category.id, exclude: post.id })
+      : Promise.resolve({ data: [] }),
+    getPosts({ perPage: 10, exclude: post.id }),
+    getRankMathHead(post.link),
+  ]);
+  const relatedIds = new Set(related.map((p) => p.id));
+  const latestList = latest.filter((p) => !relatedIds.has(p.id)).slice(0, 5);
 
-  const shareUrl = `https://www.agrinewsthai.com${canonical}`;
-
-  // SEO: Pull Rank Math metadata for consistent schema
-  const rankMath = await getRankMathHead(post.link);
+  const shareUrl = `${SITE_URL}${canonical}`;
 
   const schemas = [
     newsArticleSchema(post, rankMath),
@@ -147,207 +160,188 @@ export default async function PostPage({ params }: Props) {
   ];
 
   return (
-    <article className="relative">
+    <>
       <JsonLd data={schemas} />
-      {/* ARTICLE MASTHEAD */}
-      <header className="relative bg-paper border-b-2 border-ink">
-        <div className="mx-auto max-w-[1400px] px-6 pt-10 md:pt-16 pb-12 md:pb-20 grid md:grid-cols-12 gap-10">
-          <div className="md:col-span-7 flex flex-col min-w-0">
-            <nav
-              className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.2em] md:tracking-[0.25em] text-ink-muted flex items-center gap-2 w-full max-w-full overflow-hidden"
-              aria-label="breadcrumb"
-              style={{ whiteSpace: "nowrap" }}
-            >
-              <Link href="/" className="hover:text-moss-700 shrink-0 hidden sm:inline">
-                หน้าแรก
-              </Link>
-              <span className="shrink-0 hidden sm:inline">›</span>
+
+      <div className="mx-auto max-w-[1400px] px-4 md:px-6 pt-6 md:pt-8 pb-14 grid gap-x-12 gap-y-12 lg:grid-cols-12">
+        <article className="lg:col-span-8 min-w-0">
+          <nav aria-label="breadcrumb" className="text-sm">
+            <ol className="flex items-center gap-2 text-ink-3">
+              <li>
+                <Link href="/" className="hover:text-leaf">หน้าแรก</Link>
+              </li>
               {category && (
                 <>
-                  <Link
-                    href={`/${category.slug}`}
-                    className="hover:text-moss-700 shrink-0"
-                  >
-                    {category.name}
-                  </Link>
-                  <span className="shrink-0">›</span>
+                  <li aria-hidden>›</li>
+                  <li>
+                    <Link href={`/${category.slug}`} className="hover:text-leaf">
+                      {category.name}
+                    </Link>
+                  </li>
                 </>
               )}
-              <span
-                className="normal-case truncate min-w-0 flex-1"
-                title={title}
-              >
-                {title}
+            </ol>
+          </nav>
+
+          {category && (
+            <Link
+              href={`/${category.slug}`}
+              className="mt-5 inline-block rounded bg-leaf px-2.5 py-1 text-[13px] font-semibold text-white hover:bg-leaf-deep"
+            >
+              {category.name}
+            </Link>
+          )}
+
+          <h1 className="mt-3 font-heading font-bold text-[1.75rem] md:text-[2.35rem] leading-[1.4] text-ink">
+            {title}
+          </h1>
+
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-y border-line py-3.5">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-field">
+                <Image src="/icon.png" alt="" width={28} height={28} className="h-7 w-7" />
               </span>
-            </nav>
-
-            <div className="mt-8 flex items-center gap-3">
-              {category && <span className="stamp stamp-filled tilt-l">{category.name}</span>}
-              <span className="issue-num text-[11px] uppercase tracking-widest">
-                · {formatThaiDate(post.date)}
-              </span>
-            </div>
-
-            <h1 className="mt-6 font-display font-extrabold leading-[1.15] tracking-[-0.015em] text-ink text-[clamp(1.75rem,3.6vw,2.75rem)]">
-              {title}
-            </h1>
-
-            <div className="mt-auto pt-10 grid grid-cols-2 md:grid-cols-3 gap-6 border-t border-ink/30">
-              <div>
-                <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-ink-muted">
-                  ผู้เขียน
-                </div>
-                <div className="mt-2 font-display font-semibold">
-                  {author?.name ?? "กองบรรณาธิการ"}
-                </div>
-              </div>
-              <div>
-                <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-ink-muted">
-                  เวลาอ่าน
-                </div>
-                <div className="mt-2 issue-num font-bold">{mins} min</div>
-              </div>
-              <div>
-                <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-ink-muted">
-                  อัปเดต
-                </div>
-                <div className="mt-2 issue-num">{formatThaiDate(post.modified)}</div>
+              <div className="leading-relaxed">
+                <p className="font-semibold text-ink">{getBylineName(post)}</p>
+                <p className="text-ink-3">
+                  <time dateTime={published}>{formatThaiDateTime(published)}</time>
+                  {wasUpdated && (
+                    <span className="ml-3">
+                      อัปเดต <time dateTime={modified}>{formatThaiDateTime(modified)}</time>
+                    </span>
+                  )}
+                  <span className="ml-3">อ่าน {mins} นาที</span>
+                </p>
               </div>
             </div>
+            <ShareButtons url={shareUrl} title={title} />
           </div>
 
-          <div className="md:col-span-5 relative">
-            {img && (
-              <div className="relative aspect-[4/3] md:aspect-[4/3] w-full ring-1 ring-ink bg-paper-alt overflow-hidden">
+          {img && (
+            <figure className="mt-6">
+              <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-field">
                 <Image
                   src={img.src}
                   alt={img.alt}
                   fill
                   priority
-                  sizes="(min-width: 1024px) 40vw, 100vw"
-                  className="object-cover duo"
+                  sizes="(min-width: 1400px) 880px, (min-width: 1024px) 66vw, 100vw"
+                  className="object-cover"
                 />
               </div>
-            )}
-            <div className="absolute -top-5 -right-5 stamp stamp-filled tilt-lg-r shadow-page hidden md:inline-block">
-              Field Dispatch
-            </div>
-            <div className="mt-4 font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-ink-muted text-right">
-              Photography · กองบรรณาธิการ
-            </div>
-          </div>
-        </div>
-      </header>
+            </figure>
+          )}
 
-      {/* BODY */}
-      <div className="relative bg-paper">
-        <div className="mx-auto max-w-[1400px] px-6 py-16 md:py-24 grid md:grid-cols-12 gap-12">
-          {/* Sticky margin rail */}
-          <aside className="md:col-span-3 order-2 md:order-1">
-            <div className="md:sticky md:top-8 space-y-8">
-              <div>
-                <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-moss-700">
-                  Share
-                </div>
-                <div className="mt-3 flex flex-col gap-2">
-                  <a
-                    href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex items-center gap-2.5 border border-ink px-3 py-2 hover:bg-ink hover:text-paper text-xs font-[var(--font-stamp)] uppercase tracking-wider"
-                  >
-                    <FacebookIcon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1">Facebook</span>
-                    <span aria-hidden>→</span>
-                  </a>
-                  <a
-                    href={`https://twitter.com/intent/tweet?url=${shareUrl}&text=${encodeURIComponent(title)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex items-center gap-2.5 border border-ink px-3 py-2 hover:bg-ink hover:text-paper text-xs font-[var(--font-stamp)] uppercase tracking-wider"
-                  >
-                    <XIcon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1">X / Twitter</span>
-                    <span aria-hidden>→</span>
-                  </a>
-                  <a
-                    href={`https://social-plugins.line.me/lineit/share?url=${shareUrl}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex items-center gap-2.5 border border-ink bg-lime px-3 py-2 hover:bg-ink hover:text-paper text-xs font-[var(--font-stamp)] uppercase tracking-wider"
-                  >
-                    <LineIcon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1">LINE</span>
-                    <span aria-hidden>→</span>
-                  </a>
-                </div>
-              </div>
+          <div
+            className="wp-content mt-8"
+            dangerouslySetInnerHTML={{ __html: prepareContentHtml(post.content.rendered, title) }}
+          />
 
-              {tags.length > 0 && (
-                <div>
-                  <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-moss-700">
-                    Tags
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {tags.slice(0, 10).map((t) => (
-                      <Link
-                        key={t.id}
-                        href={`/tag/${t.slug}`}
-                        className="text-xs border border-ink/40 px-2 py-0.5 font-display hover:border-ink hover:bg-lime transition-colors"
-                      >
-                        #{t.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-moss-700">
-                  Issued
-                </div>
-                <div className="mt-3 issue-num text-sm text-ink">
-                  {formatThaiDate(post.date)}
-                </div>
-              </div>
-
-              {/* Daily agricultural prices — compact widget */}
-              <div>
-                <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-[0.25em] text-moss-700 mb-3">
-                  Daily Prices
-                </div>
-                <PriceWidgetMini />
-              </div>
-            </div>
-          </aside>
-
-          <div className="md:col-span-9 order-1 md:order-2">
-            <div
-              className="wp-content dropcap"
-              dangerouslySetInnerHTML={{ __html: post.content.rendered }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* RELATED */}
-      {related.length > 0 && (
-        <section className="bg-paper-alt border-t-2 border-ink">
-          <div className="mx-auto max-w-[1400px] px-6 py-16 md:py-24">
-            <SectionHeader
-              no="VI"
-              eyebrow={category ? `More from · ${category.name}` : "More"}
-              title="อ่านเรื่องที่เกี่ยวข้อง"
-              href={category ? `/${category.slug}` : undefined}
-            />
-            <div className="grid gap-10 md:gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {related.slice(0, 3).map((p) => (
-                <PostCard key={p.id} post={p} variant="card" />
+          {tags.length > 0 && (
+            <div className="mt-10 flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-sm font-semibold text-ink-3">แท็ก</span>
+              {tags.slice(0, 12).map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/tag/${t.slug}`}
+                  className="inline-block rounded-full bg-field px-3.5 py-1.5 text-sm text-ink-2 hover:bg-leaf hover:text-white transition-colors"
+                >
+                  {t.name}
+                </Link>
               ))}
             </div>
+          )}
+
+          <div className="mt-8 flex flex-col gap-4 rounded-lg border border-line p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold text-ink">แชร์ข่าวนี้ให้เพื่อนเกษตรกร</p>
+              <div className="mt-3">
+                <ShareButtons url={shareUrl} title={title} />
+              </div>
+            </div>
+            <PreferredSourceButton />
           </div>
-        </section>
-      )}
-    </article>
+
+          {related.length > 0 && (
+            <section className="mt-14">
+              <SectionHeader
+                title="ข่าวที่เกี่ยวข้อง"
+                href={category ? `/${category.slug}` : undefined}
+                linkLabel={category ? `ดูทั้งหมดใน${category.name}` : undefined}
+              />
+              <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 md:grid-cols-3">
+                {related.map((p) => (
+                  <PostCard key={p.id} post={p} variant="card" showCategory={false} />
+                ))}
+              </div>
+            </section>
+          )}
+        </article>
+
+        <aside className="lg:col-span-4 flex flex-col gap-8">
+            {latestList.length > 0 && (
+              <section>
+                <h2 className="flex items-center gap-2.5 font-heading font-bold text-lg text-ink">
+                  <SproutIcon className="h-5 w-5" />
+                  ข่าวล่าสุด
+                </h2>
+                <ul className="mt-4 divide-y divide-line">
+                  {latestList.map((p) => (
+                    <li key={p.id} className="py-3 first:pt-0">
+                      <Link href={getPostHref(p)} className="group grid grid-cols-[6rem_1fr] gap-3 items-start">
+                        <div className="relative aspect-[16/9] overflow-hidden rounded bg-field">
+                          {(() => {
+                            const t = getFeaturedImage(p, "medium");
+                            return t ? <Image src={t.src} alt={t.alt} fill sizes="96px" className="object-cover" /> : null;
+                          })()}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-[14px] leading-[1.55] text-ink line-clamp-3">
+                            <span className="headline-link">{stripHtml(p.title.rendered)}</span>
+                          </h3>
+                          <time dateTime={p.date} className="mt-0.5 block text-xs text-ink-3">
+                            {formatRelative(p.date)}
+                          </time>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          {/* Only the short part sticks, so nothing in the sidebar is ever out of reach. */}
+          <div className="space-y-8 lg:sticky lg:top-36">
+            <PriceWidgetMini limit={5} />
+            <PreferredSourceCard />
+          </div>
+        </aside>
+      </div>
+    </>
+  );
+}
+
+function ShareButtons({ url, title }: { url: string; title: string }) {
+  const u = encodeURIComponent(url);
+  const links = [
+    { name: "แชร์ไปที่ Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${u}`, Icon: FacebookIcon, tone: "hover:bg-[#1877f2] hover:border-[#1877f2]" },
+    { name: "แชร์ไปที่ LINE", href: `https://social-plugins.line.me/lineit/share?url=${u}`, Icon: LineIcon, tone: "hover:bg-[#06c755] hover:border-[#06c755]" },
+    { name: "แชร์ไปที่ X", href: `https://twitter.com/intent/tweet?url=${u}&text=${encodeURIComponent(title)}`, Icon: XIcon, tone: "hover:bg-ink hover:border-ink" },
+  ];
+  return (
+    <ul className="flex items-center gap-2">
+      {links.map(({ name, href, Icon, tone }) => (
+        <li key={name}>
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={name}
+            className={`h-10 w-10 grid place-items-center rounded-full border border-line text-ink-2 hover:text-white transition-colors ${tone}`}
+          >
+            <Icon className="h-[18px] w-[18px]" />
+          </a>
+        </li>
+      ))}
+    </ul>
   );
 }

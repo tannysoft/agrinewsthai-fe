@@ -2,8 +2,22 @@
  * Shared helpers for building Rank Math-style XML sitemaps.
  */
 
+import { getCategories } from "./wp";
+
 export const SITE_ORIGIN = "https://www.agrinewsthai.com";
 export const SITEMAP_XSL = `/main-sitemap.xsl`;
+
+/** Category id → slug, skipping layout-only categories (the "slide" carousel, id 13). */
+export async function categorySlugMap(): Promise<Map<number, string>> {
+  const cats = await getCategories({ perPage: 100, exclude: [13] });
+  return new Map(cats.map((c) => [c.id, c.slug]));
+}
+
+/** Same rule as getPostHref: first real category, else /news. */
+export function postPath(id: number, categories: number[] | undefined, slugs: Map<number, string>): string {
+  const slug = (categories ?? []).map((c) => slugs.get(c)).find(Boolean);
+  return `/${slug ?? "news"}/${id}`;
+}
 
 /** Rank Math default — 200 URLs per sitemap chunk. */
 export const POSTS_PER_SITEMAP = 200;

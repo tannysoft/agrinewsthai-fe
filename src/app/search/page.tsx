@@ -1,9 +1,12 @@
 import { getPosts } from "@/lib/wp";
 import { PostCard } from "@/components/PostCard";
 import { Pagination } from "@/components/Pagination";
+import { ArchiveHeader } from "@/components/ArchiveHeader";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/search" },
+  robots: { index: false, follow: true },
   title: "ค้นหา",
   description: "ค้นหาข่าวและบทความจากเรื่องเล่าข่าวเกษตร",
 };
@@ -25,66 +28,39 @@ export default async function SearchPage({ searchParams }: Props) {
 
   return (
     <>
-      <section className="bg-paper border-b-2 border-ink">
-        <div className="mx-auto max-w-[1400px] px-6 py-14 md:py-20">
-          <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-moss-700">
-            § Search · ค้นหาในปูม
-          </div>
-          <h1 className="mt-3 font-display font-extrabold leading-[1] tracking-[-0.02em] text-[clamp(2.25rem,5vw,4rem)]">
-            พิมพ์คำที่คุณสงสัย
-          </h1>
+      <ArchiveHeader title={q ? `ผลการค้นหา “${q}”` : "ค้นหาข่าวและบทความ"} total={q ? total : undefined}>
+        <form role="search" className="mt-6 max-w-2xl flex items-center gap-2 rounded-full border-2 border-line bg-paper focus-within:border-leaf pl-5 pr-1.5 py-1.5 transition-colors">
+          <label htmlFor="q" className="sr-only">คำค้น</label>
+          <input
+            id="q"
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="เช่น ราคาข้าว ทุเรียน ปุ๋ยอินทรีย์"
+            className="flex-1 min-w-0 bg-transparent text-lg py-2 placeholder:text-ink-3 focus:outline-none"
+          />
+          <button type="submit" className="shrink-0 h-11 px-6 rounded-full bg-leaf text-white font-semibold hover:bg-leaf-deep">
+            ค้นหา
+          </button>
+        </form>
+      </ArchiveHeader>
 
-          <form className="mt-8 max-w-3xl w-full min-w-0 flex items-end gap-2 md:gap-4 border-b-2 border-ink pb-2">
-            <span className="hidden sm:inline font-[var(--font-stamp)] text-ink/50 pb-3 tracking-wider shrink-0">→</span>
-            <input
-              type="search"
-              name="q"
-              defaultValue={q}
-              placeholder="พิมพ์คำค้น…"
-              className="flex-1 min-w-0 bg-transparent font-display text-lg md:text-2xl font-bold placeholder:text-ink/30 focus:outline-none py-2"
-            />
-            <button
-              type="submit"
-              className="shrink-0 font-[var(--font-stamp)] uppercase tracking-widest text-xs md:text-sm bg-ink text-paper px-4 md:px-6 py-3 hover:bg-moss-700"
-            >
-              ค้นหา
-            </button>
-          </form>
-
-          {q && (
-            <div className="mt-6 flex items-center gap-4 font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.25em] text-ink-muted">
-              <span>ผลลัพธ์ของ “<span className="text-ink font-bold">{q}</span>”</span>
-              <span className="h-px w-10 bg-ink/30" />
-              <span>{total.toLocaleString("th-TH")} รายการ</span>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-[1400px] px-6 py-14 md:py-20">
+      <section className="mx-auto max-w-[960px] px-4 md:px-6 py-10 md:py-14">
         {!q ? (
-          <div className="text-center py-20">
-            <p className="font-display text-xl md:text-2xl font-bold max-w-xl mx-auto leading-snug">
-              พิมพ์คำค้นด้านบนเพื่อเริ่มต้น
-            </p>
-            <p className="mt-3 text-ink-muted">
-              เช่น “ราคาข้าว” “เกษตรอินทรีย์” “สัตว์เศรษฐกิจ”
-            </p>
-          </div>
+          <p className="py-16 text-center text-ink-2">พิมพ์คำที่อยากรู้ในช่องด้านบน เช่น ชื่อพืช ชื่อสัตว์ หรือชื่อโครงการ</p>
         ) : posts.length === 0 ? (
-          <div className="text-center py-20 max-w-xl mx-auto">
-            <p className="big-num">0/0</p>
-            <p className="mt-4 font-display text-xl md:text-2xl font-bold leading-snug">
-              ไม่พบผลลัพธ์ที่ตรงกัน
-            </p>
-            <p className="mt-3 text-ink-muted">ลองใช้คำที่สั้นลง หรือสะกดใหม่</p>
+          <div className="py-16 text-center">
+            <p className="font-heading font-bold text-2xl text-ink">ไม่พบเรื่องที่ตรงกับ “{q}”</p>
+            <p className="mt-3 text-ink-2">ลองใช้คำที่สั้นลง ตรวจตัวสะกด หรือค้นด้วยชื่อพืชหรือสัตว์โดยตรง</p>
           </div>
         ) : (
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="divide-y divide-line">
             {posts.map((p) => (
-              <PostCard key={p.id} post={p} variant="card" />
+              <li key={p.id} className="py-5 first:pt-0">
+                <PostCard post={p} variant="row" />
+              </li>
             ))}
-          </div>
+          </ul>
         )}
 
         {q && posts.length > 0 && (

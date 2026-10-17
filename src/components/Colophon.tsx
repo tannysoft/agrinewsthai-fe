@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { WPCategory } from "@/lib/wp";
+import { CROPS } from "@/lib/crops";
+import { TOPICS } from "@/lib/topics";
 
 const SOCIALS: { name: string; href: string; icon: React.ReactNode }[] = [
   {
@@ -55,114 +57,86 @@ const SOCIALS: { name: string; href: string; icon: React.ReactNode }[] = [
 export function Colophon({ categories }: { categories: WPCategory[] }) {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative z-[2] bg-ink text-paper border-t-4 border-ink">
-      <div className="border-b border-paper/15">
-        <div className="mx-auto max-w-[1400px] px-6 py-14 md:py-18 grid md:grid-cols-12 gap-10">
-          <div className="md:col-span-5">
-            <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-lime">
-              The Colophon · ท้ายฉบับ
-            </div>
-            <Image
-              src="/logo.svg"
-              alt="เรื่องเล่าข่าวเกษตร"
-              width={400}
-              height={138}
-              className="mt-5 h-16 md:h-20 w-auto brightness-0 invert"
-            />
-            <div className="mt-3 text-[10px] font-[var(--font-stamp)] tracking-[0.3em] uppercase text-paper/60">
-              A Thai Agricultural News · Est. 2005
-            </div>
-            <p className="mt-5 max-w-md text-sm text-paper/70 leading-relaxed">
-              ข่าวสาร ความรู้ และภูมิปัญญาการเกษตรไทย
-              — ทุกเรื่องเว็บไซต์นี้ ผ่านการคัดกรองโดยกองบรรณาธิการ
-              เพื่อให้อ่านแล้วนำไปใช้ได้จริง
-            </p>
+    <footer className="bg-leaf-deep text-white/85">
+      <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-14 md:py-16 grid gap-10 md:grid-cols-12">
+        <div className="md:col-span-4">
+          <Image
+            src="/logo.svg"
+            alt="เรื่องเล่าข่าวเกษตร"
+            width={904}
+            height={311}
+            className="h-14 w-auto brightness-0 invert"
+          />
+          <p className="mt-5 max-w-sm leading-relaxed text-white/70">
+            ข่าวสาร ความรู้ และภูมิปัญญาการเกษตรไทย
+            เรียบเรียงให้อ่านง่ายและนำไปใช้ได้จริง
+          </p>
+          <div className="mt-6 flex gap-2">
+            {SOCIALS.map((s) => (
+              <a
+                key={s.name}
+                href={s.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={s.name}
+                className="h-10 w-10 grid place-items-center rounded-full bg-white/10 hover:bg-sprout hover:text-leaf-deep transition-colors"
+              >
+                <span className="h-[18px] w-[18px] block">{s.icon}</span>
+              </a>
+            ))}
           </div>
+        </div>
 
-          <div className="md:col-span-4">
-            <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-lime mb-5">
-              § Index — หมวดหมู่
-            </div>
-            <ul className="grid grid-cols-2 gap-y-2 text-sm text-paper/85">
-              {categories.slice(0, 10).map((c, i) => (
-                <li key={c.id} className="flex items-baseline gap-2 font-display">
-                  <span className="issue-num text-[10px] text-paper/40 shrink-0">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <Link
-                    href={`/${c.slug}`}
-                    className="hover:text-lime transition-colors"
-                  >
-                    {c.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="md:col-span-5">
+          <h2 className="font-semibold text-white">หมวดหมู่</h2>
+          <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
+            {categories.slice(0, 12).map((c) => (
+              <li key={c.id}>
+                <Link href={`/${c.slug}`} className="hover:text-sprout transition-colors">
+                  {c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          <div className="md:col-span-3">
-            <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-lime mb-5">
-              § Office
-            </div>
-            <ul className="space-y-2.5 text-sm text-paper/85">
-              <li>
-                <Link href="/about" className="hover:text-lime after-arrow font-display">
-                  เกี่ยวกับเรา
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-lime after-arrow font-display">
-                  ติดต่อ / ส่งข่าว
-                </Link>
-              </li>
-              <li>
-                <Link href="/latest" className="hover:text-lime after-arrow font-display">
-                  ข่าวล่าสุด
-                </Link>
-              </li>
-              <li>
-                <Link href="/prices" className="hover:text-lime after-arrow font-display">
-                  ราคาสินค้าเกษตร
-                </Link>
-              </li>
-              <li>
-                <Link href="/tags" className="hover:text-lime after-arrow font-display">
-                  แท็กทั้งหมด
-                </Link>
-              </li>
-              <li>
-                <Link href="/search" className="hover:text-lime after-arrow font-display">
-                  ค้นหา
-                </Link>
-              </li>
-            </ul>
-
-            <div className="mt-7 font-[var(--font-stamp)] text-[10px] tracking-[0.3em] uppercase text-paper/50 mb-3">
-              · Follow ·
-            </div>
-            <div className="flex gap-2">
-              {SOCIALS.map((s) => (
-                <a
-                  key={s.name}
-                  href={s.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={s.name}
-                  className="h-10 w-10 grid place-items-center border border-paper/30 hover:bg-lime hover:text-ink hover:border-lime transition-colors"
-                >
-                  <span className="h-[18px] w-[18px] block">{s.icon}</span>
-                </a>
-              ))}
-            </div>
-          </div>
+        <div className="md:col-span-3">
+          <h2 className="font-semibold text-white">เรื่องเล่าข่าวเกษตร</h2>
+          <ul className="mt-4 space-y-2.5">
+            <li><Link href="/news" className="hover:text-sprout transition-colors">ข่าวเกษตร</Link></li>
+            <li><Link href="/prices" className="hover:text-sprout transition-colors">ราคาสินค้าเกษตร</Link></li>
+            <li><Link href="/tags" className="hover:text-sprout transition-colors">แท็กทั้งหมด</Link></li>
+            <li><Link href="/about" className="hover:text-sprout transition-colors">เกี่ยวกับเรา</Link></li>
+            <li><Link href="/contact" className="hover:text-sprout transition-colors">ติดต่อเรา</Link></li>
+          </ul>
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1400px] px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] issue-num uppercase tracking-wider text-paper/60">
-        <span>© {year} AgriNewsThai · All rights reserved</span>
-        <span className="hidden md:inline">Field Zine · Printed weekly in Thailand</span>
-        <span>🌾 Made with care</span>
+      <div className="border-t border-white/10">
+        <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-6 grid gap-4 md:grid-cols-2 text-sm">
+          <FooterLinks title="ราคาพืชผลวันนี้" links={CROPS.map((c) => ({ href: `/prices/${c.slug}`, label: c.name }))} />
+          <FooterLinks title="หัวข้อเด่น" links={TOPICS.map((t) => ({ href: `/topic/${t.slug}`, label: t.name }))} />
+        </div>
+      </div>
+
+      <div className="border-t border-white/10">
+        <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-5 text-sm text-white/55">
+          © {year} เรื่องเล่าข่าวเกษตร (AgriNewsThai) สงวนลิขสิทธิ์
+        </div>
       </div>
     </footer>
+  );
+}
+
+function FooterLinks({ title, links }: { title: string; links: { href: string; label: string }[] }) {
+  return (
+    <p className="leading-loose">
+      <span className="mr-3 font-semibold text-white">{title}</span>
+      {links.map((l) => (
+        <Link key={l.href} href={l.href} className="mr-4 whitespace-nowrap text-white/70 hover:text-sprout transition-colors">
+          {l.label}
+        </Link>
+      ))}
+    </p>
   );
 }

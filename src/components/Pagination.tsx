@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * basePath — the resource root (e.g. "/news", "/tag/foo", "/latest", "/search?q=rice").
+ * basePath — the resource root (e.g. "/news", "/tag/foo", "/search?q=rice").
  * - If the path already contains a query string, pagination uses "&page=N" (needed for /search).
  * - Otherwise, pagination follows the WordPress-style "/base/page/N" pattern.
  */
@@ -47,48 +47,36 @@ export function Pagination({
     pages.push(totalPages);
   }
 
+  const btn = "h-11 min-w-11 px-3 grid place-items-center rounded-full text-[15px] transition-colors";
+
   return (
-    <nav className="mt-16 pt-8 border-t-2 border-ink">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-ink-muted">
-          Page {String(currentPage).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
-        </div>
-        <div className="flex items-center gap-1 flex-wrap issue-num">
-          {currentPage > 1 && (
-            <Link
-              href={pageHref(currentPage - 1)}
-              className="px-4 h-10 grid place-items-center border border-ink text-xs uppercase tracking-widest hover:bg-lime"
-            >
-              ← Prev
-            </Link>
-          )}
-          {pages.map((p, i) =>
-            p === "…" ? (
-              <span key={`e${i}`} className="px-2 text-ink-muted">…</span>
-            ) : (
-              <Link
-                key={p}
-                href={pageHref(p)}
-                className={`min-w-10 h-10 grid place-items-center text-sm border transition ${
-                  p === currentPage
-                    ? "bg-ink text-paper border-ink"
-                    : "border-ink/20 hover:bg-lime hover:border-ink"
-                }`}
-              >
-                {String(p).padStart(2, "0")}
-              </Link>
-            )
-          )}
-          {currentPage < totalPages && (
-            <Link
-              href={pageHref(currentPage + 1)}
-              className="px-4 h-10 grid place-items-center border border-ink text-xs uppercase tracking-widest hover:bg-lime"
-            >
-              Next →
-            </Link>
-          )}
-        </div>
-      </div>
+    <nav aria-label="เลือกหน้า" className="mt-14 flex items-center justify-center gap-1.5 flex-wrap">
+      {currentPage > 1 && (
+        <Link href={pageHref(currentPage - 1)} className={`${btn} px-5 border border-line hover:border-leaf hover:text-leaf`}>
+          ก่อนหน้า
+        </Link>
+      )}
+      {pages.map((p, i) =>
+        p === "…" ? (
+          <span key={`e${i}`} className="px-1 text-ink-3">…</span>
+        ) : (
+          <Link
+            key={p}
+            href={pageHref(p)}
+            aria-current={p === currentPage ? "page" : undefined}
+            className={`${btn} tabular-nums ${
+              p === currentPage ? "bg-leaf text-white font-semibold" : "text-ink-2 hover:bg-field hover:text-leaf"
+            }`}
+          >
+            {p}
+          </Link>
+        )
+      )}
+      {currentPage < totalPages && (
+        <Link href={pageHref(currentPage + 1)} className={`${btn} px-5 border border-line hover:border-leaf hover:text-leaf`}>
+          ถัดไป
+        </Link>
+      )}
     </nav>
   );
 }

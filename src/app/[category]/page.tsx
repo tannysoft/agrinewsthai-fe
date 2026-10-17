@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getCategoryBySlug, getPosts, stripHtml } from "@/lib/wp";
+import { getCategoryBySlug, getPosts } from "@/lib/wp";
+import { categoryCopy, categoryMetadata } from "@/lib/category-meta";
 import { PostCard } from "@/components/PostCard";
 import { Pagination } from "@/components/Pagination";
+import { ArchiveHeader } from "@/components/ArchiveHeader";
 import { JsonLd } from "@/components/JsonLd";
 import {
   SITE_URL,
@@ -18,22 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category } = await params;
   const cat = await getCategoryBySlug(category);
   if (!cat) return { title: "ไม่พบหมวดหมู่" };
-  const description =
-    stripHtml(cat.description) ||
-    `ข่าวและบทความในหมวด ${cat.name} จากเรื่องเล่าข่าวเกษตร`;
-  const url = `${SITE_URL}/${category}`;
-  return {
-    title: cat.name,
-    description,
-    alternates: { canonical: url },
-    openGraph: {
-      type: "website",
-      url,
-      title: cat.name,
-      description,
-      locale: "th_TH",
-    },
-  };
+  return categoryMetadata(cat);
 }
 
 export default async function CategoryPage({ params }: Props) {
@@ -68,69 +56,31 @@ export default async function CategoryPage({ params }: Props) {
   return (
     <>
       <JsonLd data={schemas} />
-      {/* HEADER */}
-      <section className="bg-ink text-paper border-b-4 border-lime">
-        <div className="mx-auto max-w-[1400px] px-6 py-14 md:py-20 grid md:grid-cols-12 gap-8 items-end">
-          <div className="md:col-span-8">
-            <div className="flex items-center gap-3">
-              <span className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-lime">
-                Category · หมวดหมู่
-              </span>
-              <span className="issue-num text-xs text-paper/60">
-                § {String(cat.id).padStart(3, "0")}
-              </span>
-            </div>
-            <h1 className="mt-4 font-display font-extrabold leading-[1] tracking-[-0.02em] text-[clamp(2.25rem,5.5vw,4.5rem)]">
-              <span className="text-lime">/</span>
-              {cat.name}
-            </h1>
-            {cat.description && (
-              <p className="mt-6 max-w-2xl text-paper/75 text-base md:text-lg leading-relaxed">
-                {stripHtml(cat.description)}
-              </p>
-            )}
-          </div>
-          <div className="md:col-span-4 md:text-right">
-            <div className="inline-block text-left border border-lime p-5">
-              <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-widest text-lime">
-                Archive
-              </div>
-              <div className="mt-2 issue-num text-4xl font-bold">
-                {total.toLocaleString("th-TH")}
-              </div>
-              <div className="issue-num text-[11px] uppercase tracking-widest text-paper/70">
-                Stories · Page {page} / {Math.max(totalPages, 1)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ArchiveHeader
+        title={cat.name}
+        description={categoryCopy(cat).description}
+        total={total}
+      />
 
-      {/* CONTENT */}
-      <section className="mx-auto max-w-[1400px] px-6 py-14 md:py-20">
+      <section className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 md:py-14">
         {posts.length === 0 ? (
-          <p className="text-ink-muted text-center py-20">ยังไม่มีเนื้อหาในหมวดนี้</p>
+          <p className="py-20 text-center text-ink-2">หมวดนี้ยังไม่มีเรื่อง ลองดู<Link href="/news" className="text-leaf underline underline-offset-4">ข่าวเกษตร</Link>แทน</p>
         ) : (
           <>
             {lead && (
-              <div className="mb-14">
-                <PostCard post={lead} variant="headline" priority />
+              <div className="pb-10 mb-10 border-b border-line">
+                <PostCard post={lead} variant="feature" priority showCategory={false} />
               </div>
             )}
-
-            <div className="grid gap-10 md:gap-12 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {[second, ...rest].filter(Boolean).map((p) => (
-                <PostCard key={p!.id} post={p!} variant="card" />
+                <PostCard key={p!.id} post={p!} variant="card" showCategory={false} />
               ))}
             </div>
           </>
         )}
 
-        <Pagination
-          currentPage={page}
-          totalPages={Math.min(totalPages, 50)}
-          basePath={`/${slug}`}
-        />
+        <Pagination currentPage={page} totalPages={Math.min(totalPages, 50)} basePath={`/${slug}`} />
       </section>
     </>
   );

@@ -4,13 +4,15 @@ import {
   POSTS_PER_SITEMAP,
   SITE_ORIGIN,
   XML_HEADERS,
+  categorySlugMap,
+  postPath,
   urlSetXml,
 } from "@/lib/sitemap-xml";
 import { getTotalPostCount } from "@/lib/wp-count";
 
 export const revalidate = 1800;
 
-type MinPost = { id: number; modified: string };
+type MinPost = { id: number; modified: string; categories?: number[] };
 
 /**
  * Fetch a single 200-post chunk for sitemap page N (1-indexed).
@@ -31,7 +33,7 @@ async function fetchSlice(
 ): Promise<MinPost[]> {
   const url =
     `${WP_API}/posts?per_page=${perPage}&page=1&offset=${offset}` +
-    `&_fields=id,modified&orderby=date&order=desc`;
+    `&_fields=id,modified,categories&orderby=date&order=desc`;
   try {
     const r = await fetch(url, {
       next: { revalidate: 1800, tags: ["wp-posts-sitemap"] },
@@ -55,10 +57,10 @@ export async function GET(
   const totalPages = Math.max(1, Math.ceil(total / POSTS_PER_SITEMAP));
   if (pageNum > totalPages) notFound();
 
-  const posts = await fetchChunk(pageNum);
+  const [posts, slugs] = await Promise.all([fetchChunk(pageNum), categorySlugMap()]);
   const xml = urlSetXml(
     posts.map((p) => ({
-      loc: `${SITE_ORIGIN}/news/${p.id}`,
+      loc: `${SITE_ORIGIN}${postPath(p.id, p.categories, slugs)}`,
       lastmod: p.modified,
       changefreq: "weekly",
       priority: 0.6,

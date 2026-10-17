@@ -1,60 +1,35 @@
 import type { Metadata } from "next";
-import {
-  Kanit,
-  IBM_Plex_Sans_Thai_Looped,
-  Chonburi,
-  JetBrains_Mono,
-} from "next/font/google";
+import { Google_Sans } from "next/font/google";
 import "./globals.css";
 import { Masthead } from "@/components/Masthead";
 import { Colophon } from "@/components/Colophon";
 import { CookieNotice } from "@/components/CookieNotice";
-import { Ticker } from "@/components/Ticker";
 import { JsonLd } from "@/components/JsonLd";
-import { getCategories, getPosts } from "@/lib/wp";
+import { getCategories } from "@/lib/wp";
 import { organizationSchema, websiteSchema } from "@/lib/schema";
 
-const kanit = Kanit({
-  variable: "--font-kanit",
+const googleSans = Google_Sans({
+  variable: "--font-google-sans",
   subsets: ["latin", "thai"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
-  display: "swap",
-});
-
-const plexThai = IBM_Plex_Sans_Thai_Looped({
-  variable: "--font-plex-thai",
-  subsets: ["latin", "thai"],
-  weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
-
-const chonburi = Chonburi({
-  variable: "--font-chonburi",
-  subsets: ["latin", "thai"],
-  weight: ["400"],
-  display: "swap",
-});
-
-const jetMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.agrinewsthai.com"),
   title: {
-    default: "เรื่องเล่าข่าวเกษตร · AGRI NEWS THAI",
-    template: "%s · เรื่องเล่าข่าวเกษตร",
+    default: "ข่าวเกษตรวันนี้ ล่าสุด ราคาพืชผล นโยบายเกษตร | เรื่องเล่าข่าวเกษตร",
+    template: "%s | เรื่องเล่าข่าวเกษตร",
   },
   description:
-    "ข่าวสาร ความรู้ และภูมิปัญญาการเกษตรไทย — ทันสมัย อ่านง่าย ใช้ได้จริง",
+    "อัปเดตข่าวเกษตรล่าสุดทุกวัน ข้าว ทุเรียน ยางพารา ปศุสัตว์ ประมง น้ำและนโยบายกระทรวงเกษตรฯ อ่านก่อนใครที่เรื่องเล่าข่าวเกษตร",
   keywords: ["ข่าวเกษตร", "เกษตรกรไทย", "พืชเศรษฐกิจ", "ปศุสัตว์", "ดินและน้ำ", "เทคโนโลยีการเกษตร"],
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "th_TH",
+    title: "ข่าวเกษตรวันนี้ ล่าสุด ราคาพืชผล นโยบายเกษตร | เรื่องเล่าข่าวเกษตร",
+    description:
+      "อัปเดตข่าวเกษตรล่าสุดทุกวัน ข้าว ทุเรียน ยางพารา ปศุสัตว์ ประมง น้ำและนโยบายกระทรวงเกษตรฯ อ่านก่อนใครที่เรื่องเล่าข่าวเกษตร",
     siteName: "เรื่องเล่าข่าวเกษตร",
     url: "https://www.agrinewsthai.com",
     images: [
@@ -89,26 +64,23 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [categories, { data: tickerPosts }] = await Promise.all([
-    getCategories({ exclude: [13] }),
-    getPosts({
-      perPage: 10,
-      page: 1,
-      embed: false,
-      fields: ["id", "slug", "title", "date", "link"],
-    }),
-  ]);
+  const categories = await getCategories({ exclude: [13] });
 
   return (
     <html
       lang="th"
-      className={`${kanit.variable} ${plexThai.variable} ${chonburi.variable} ${jetMono.variable} antialiased`}
+      className={`${googleSans.variable} antialiased`}
     >
       <body className="flex flex-col min-h-screen">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:bg-leaf focus:text-white focus:px-4 focus:py-2 focus:rounded-md"
+        >
+          ข้ามไปยังเนื้อหา
+        </a>
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <Masthead categories={categories} />
-        <Ticker posts={tickerPosts} />
-        <main className="flex-1 relative z-[2]">{children}</main>
+        <main id="main" className="flex-1">{children}</main>
         <Colophon categories={categories} />
         <CookieNotice />
       </body>

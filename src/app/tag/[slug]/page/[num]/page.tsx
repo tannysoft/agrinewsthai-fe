@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getTagBySlug, getPostsByTag, stripHtml } from "@/lib/wp";
 import { PostCard } from "@/components/PostCard";
 import { Pagination } from "@/components/Pagination";
+import { ArchiveHeader } from "@/components/ArchiveHeader";
 
 export const revalidate = 300;
 
@@ -38,45 +39,21 @@ export default async function TagPaginatedPage({ params }: Props) {
 
   return (
     <>
-      <section className="bg-moss-900 text-paper border-b-4 border-lime">
-        <div className="mx-auto max-w-[1400px] px-6 py-14 md:py-20 grid md:grid-cols-12 gap-8 items-end">
-          <div className="md:col-span-8">
-            <div className="font-[var(--font-stamp)] text-[11px] uppercase tracking-[0.3em] text-lime">
-              Tag · แท็ก
-            </div>
-            <h1 className="mt-4 font-display font-extrabold leading-[1] tracking-[-0.02em] text-[clamp(2.25rem,5.5vw,4.5rem)]">
-              <span className="text-lime">#</span>
-              {tag.name}
-            </h1>
-          </div>
-          <div className="md:col-span-4 md:text-right">
-            <div className="inline-block text-left border border-lime p-5">
-              <div className="font-[var(--font-stamp)] text-[10px] uppercase tracking-widest text-lime">
-                Archive
-              </div>
-              <div className="mt-2 issue-num text-3xl font-bold">
-                {total.toLocaleString("th-TH")}
-              </div>
-              <div className="issue-num text-[11px] uppercase tracking-widest text-paper/70">
-                Stories · Page {page} / {Math.max(totalPages, 1)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ArchiveHeader
+        title={`#${tag.name}`}
+        total={total}
+        page={page}
+        parent={{ label: "แท็กทั้งหมด", href: "/tags" }}
+      />
 
-      <section className="mx-auto max-w-[1400px] px-6 py-12 md:py-16">
-        <div className="grid gap-10 md:gap-12 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mx-auto max-w-[1400px] px-4 md:px-6 py-10 md:py-14">
+        <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((p) => (
             <PostCard key={p.id} post={p} variant="card" />
           ))}
         </div>
 
-        <Pagination
-          currentPage={page}
-          totalPages={Math.min(totalPages, 50)}
-          basePath={`/tag/${slug}`}
-        />
+        <Pagination currentPage={page} totalPages={Math.min(totalPages, 50)} basePath={`/tag/${slug}`} />
       </section>
     </>
   );
