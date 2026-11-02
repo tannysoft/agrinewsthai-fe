@@ -6,17 +6,38 @@ type MediaDoc = {
   sizes?: { thumbnail?: { url: string } } | null
 }
 
-/** Cover image thumbnail in the posts list (the 320 px copy when it exists). */
-export async function CoverCell({ cellData, payload }: DefaultServerCellComponentProps) {
+const editURL = ({ payload, collectionSlug, rowData }: DefaultServerCellComponentProps) =>
+  `${payload.config.routes.admin}/collections/${collectionSlug}/${rowData?.id}`
+
+/** Cover image thumbnail in the posts list (the 320 px copy when it exists); opens the story. */
+export async function CoverCell(props: DefaultServerCellComponentProps) {
+  const { cellData, payload } = props
   const id = cellData && typeof cellData === 'object' ? (cellData as { id?: number }).id : cellData
-  if (!id) return <div style={box} />
-  const media = (await payload
-    .findByID({ collection: 'media', id: id as number, depth: 0, overrideAccess: true, disableErrors: true })
-    .catch((): null => null)) as MediaDoc | null
+  const media = id
+    ? ((await payload
+        .findByID({ collection: 'media', id: id as number, depth: 0, overrideAccess: true, disableErrors: true })
+        .catch((): null => null)) as MediaDoc | null)
+    : null
   const src = media?.sizes?.thumbnail?.url ?? media?.url
-  if (!src) return <div style={box} />
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={media?.alt ?? ''} loading="lazy" style={{ ...box, objectFit: 'cover' }} />
+  return (
+    <a href={editURL(props)} style={{ display: 'block', width: 96 }}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={media?.alt ?? ''} loading="lazy" style={{ ...box, objectFit: 'cover' }} />
+      ) : (
+        <span style={box} />
+      )}
+    </a>
+  )
+}
+
+/** Story title linking to the edit view, whichever column it's in. */
+export function TitleCell(props: DefaultServerCellComponentProps) {
+  return (
+    <a href={editURL(props)} style={{ fontWeight: 500, color: 'inherit' }}>
+      {String(props.cellData ?? '') || '(ไม่มีหัวข้อ)'}
+    </a>
+  )
 }
 
 const box = {

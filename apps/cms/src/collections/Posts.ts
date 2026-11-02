@@ -52,7 +52,14 @@ export const Posts: CollectionConfig = {
     afterDelete: [updateTagCountsOnDelete, revalidateAfterDelete('posts')],
   },
   fields: [
-    { name: 'title', label: 'หัวข้อข่าว', type: 'text', required: true },
+    {
+      name: 'title',
+      label: 'หัวข้อข่าว',
+      type: 'text',
+      required: true,
+      // The cover is the first list column; keep the title clickable too.
+      admin: { components: { Cell: '/components/admin/CoverCell#TitleCell' } },
+    },
     {
       name: 'featuredImage',
       label: 'ภาพหน้าปก',
