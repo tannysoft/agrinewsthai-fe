@@ -71,12 +71,5 @@ export const Users: CollectionConfig = {
     },
     { name: 'bio', label: 'ประวัติย่อ', type: 'textarea' },
     { name: 'avatar', label: 'รูปโปรไฟล์', type: 'upload', relationTo: 'media' },
-    {
-      name: 'wpId',
-      label: 'WordPress user ID',
-      type: 'number',
-      index: true,
-      admin: { position: 'sidebar', readOnly: true },
-    },
   ],
 }

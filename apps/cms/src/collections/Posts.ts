@@ -8,15 +8,15 @@ import { revalidateAfterChange, revalidateAfterDelete } from '../hooks/revalidat
 import { updateTagCounts, updateTagCountsOnDelete } from '../hooks/tag-counts'
 
 /**
- * News stories and articles (WordPress `post`). The document id is the
- * WordPress post id for imported stories, so URLs stay /{category}/{id}.
+ * News stories and articles (WordPress `post`). Imported stories keep their
+ * WordPress post id as the document id, so URLs stay /{category}/{id}.
  */
 export const Posts: CollectionConfig = {
   slug: 'posts',
   labels: { singular: 'ข่าว / บทความ', plural: 'ข่าว / บทความ' },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'primaryCategory', 'author', 'publishedAt', '_status'],
+    defaultColumns: ['featuredImage', 'title', 'primaryCategory', 'author', 'publishedAt', '_status'],
     group: 'เนื้อหา',
     listSearchableFields: ['title', 'slug'],
     // Opens the story on the website in draft mode (apps/web/src/app/api/preview).
@@ -54,36 +54,18 @@ export const Posts: CollectionConfig = {
   fields: [
     { name: 'title', label: 'หัวข้อข่าว', type: 'text', required: true },
     {
-      type: 'tabs',
-      tabs: [
-        {
-          label: 'เนื้อหา',
-          fields: [
-            { name: 'featuredImage', label: 'ภาพหน้าปก', type: 'upload', relationTo: 'media' },
-            { name: 'content', label: 'เนื้อหา', type: 'richText', editor: articleEditor },
-            {
-              name: 'excerpt',
-              label: 'เกริ่นนำ / สรุปย่อ',
-              type: 'textarea',
-              admin: { description: 'แสดงในรายการข่าวและใช้เป็นคำอธิบายเมื่อไม่ได้กรอก SEO' },
-            },
-          ],
-        },
-        {
-          label: 'ข้อมูลเดิมจาก WordPress',
-          admin: { condition: (data) => Boolean(data?.wpId) },
-          fields: [
-            { name: 'wpId', label: 'WordPress post ID', type: 'number', index: true, admin: { readOnly: true } },
-            { name: 'wpLink', label: 'URL เดิม', type: 'text', admin: { readOnly: true } },
-            {
-              name: 'legacyHtml',
-              label: 'HTML ต้นฉบับ',
-              type: 'code',
-              admin: { readOnly: true, language: 'html', description: 'เก็บไว้ตรวจสอบหลังย้ายระบบ ไม่ได้แสดงบนเว็บ' },
-            },
-          ],
-        },
-      ],
+      name: 'featuredImage',
+      label: 'ภาพหน้าปก',
+      type: 'upload',
+      relationTo: 'media',
+      admin: { components: { Cell: '/components/admin/CoverCell#CoverCell' } },
+    },
+    { name: 'content', label: 'เนื้อหา', type: 'richText', editor: articleEditor },
+    {
+      name: 'excerpt',
+      label: 'เกริ่นนำ / สรุปย่อ',
+      type: 'textarea',
+      admin: { description: 'แสดงในรายการข่าวและใช้เป็นคำอธิบายเมื่อไม่ได้กรอก SEO' },
     },
     // Rendered body for the website; rebuilt from `content` on every save.
     { name: 'contentHtml', type: 'textarea', admin: { hidden: true } },

@@ -57,13 +57,6 @@ export const Media: CollectionConfig = {
       admin: { hidden: true },
       hooks: { afterRead: [sizesAfterRead] },
     },
-    {
-      name: 'wpId',
-      label: 'WordPress attachment ID',
-      type: 'number',
-      index: true,
-      admin: { position: 'sidebar', readOnly: true },
-    },
   ],
   upload: {
     mimeTypes: ['image/*', 'application/pdf', 'video/mp4'],

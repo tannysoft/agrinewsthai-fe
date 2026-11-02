@@ -48,12 +48,5 @@ export const Tags: CollectionConfig = {
         description: 'นับอัตโนมัติเมื่อบันทึกบทความ ใช้เรียงแท็กยอดนิยมและซ่อนแท็กว่าง',
       },
     },
-    {
-      name: 'wpId',
-      label: 'WordPress term ID',
-      type: 'number',
-      index: true,
-      admin: { position: 'sidebar', readOnly: true },
-    },
   ],
 }

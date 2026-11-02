@@ -44,6 +44,5 @@ export const Pages: CollectionConfig = {
     },
     { name: 'featuredImage', label: 'ภาพหน้าปก', type: 'upload', relationTo: 'media', admin: { position: 'sidebar' } },
     { name: 'publishedAt', label: 'วันที่เผยแพร่', type: 'date', admin: { position: 'sidebar' } },
-    { name: 'wpId', label: 'WordPress page ID', type: 'number', index: true, admin: { position: 'sidebar', readOnly: true } },
   ],
 }

@@ -105,7 +105,6 @@ async function migrateUsers(payload: Payload, wp: WordPress) {
         bio: u.description || undefined,
         role,
         showByline: looksLikeRealName(u.name),
-        wpId: u.id,
       }
       if (have.has(u.id)) {
         await payload.update({ collection: 'users', id: u.id, data: data as never, overrideAccess: true, context: ctx })
@@ -146,7 +145,6 @@ async function migrateCategories(payload: Payload, wp: WordPress) {
       order: order === -1 ? 100 : order + 1,
       showInMenu: order !== -1,
       noindex: hidden,
-      wpId: c.id,
       meta: copy ? { title: copy.title, description: copy.description } : undefined,
     }
     if (have.has(c.id)) {
@@ -173,7 +171,6 @@ async function migrateTags(payload: Payload, wp: WordPress) {
           slug: decodeSlug(t.slug),
           description: t.description || null,
           postCount: t.count,
-          wpId: t.id,
         },
       })
       n++
@@ -207,7 +204,6 @@ function mediaData(m: WPMedia) {
     height: m.media_details?.height ?? null,
     alt: m.alt_text || null,
     caption: stripHtml(m.caption?.rendered ?? '') || null,
-    wpId: m.id,
     createdAt: gmt(m.date_gmt),
     updatedAt: gmt(m.modified_gmt),
   }
@@ -376,11 +372,8 @@ async function migrateContent(
               tags: (p.tags ?? []).filter((t) => tags.has(t)),
               sticky: Boolean(p.sticky),
               format: p.format === 'video' || p.format === 'gallery' ? p.format : 'standard',
-              wpLink: p.link,
-              legacyHtml: p.content.rendered,
             }
           : {}),
-        wpId: p.id,
         _status: WP_STATUS[p.status] ?? 'draft',
         meta: {
           title: seo.title,
@@ -429,7 +422,7 @@ async function migrateContent(
     // list will then be empty for those stories (it reads versions).
     const versions = kind === 'posts' ? '_posts_v' : '_pages_v'
     await payload.db.drizzle.run(
-      sql.raw(`DELETE FROM ${versions} WHERE parent_id IN (SELECT id FROM ${kind} WHERE wp_id IS NOT NULL)
+      sql.raw(`DELETE FROM ${versions} WHERE parent_id IN (SELECT id FROM ${kind})
                AND parent_id IN (SELECT parent_id FROM ${versions} GROUP BY parent_id HAVING COUNT(*) = 1)`),
     )
     log(`${kind}: dropped import-time version copies`)

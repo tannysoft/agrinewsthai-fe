@@ -45,12 +45,5 @@ export const Categories: CollectionConfig = {
       defaultValue: false,
       admin: { position: 'sidebar', description: 'เช่น หมวด “สไลด์” ที่ใช้จัดหน้าแรกเท่านั้น' },
     },
-    {
-      name: 'wpId',
-      label: 'WordPress term ID',
-      type: 'number',
-      index: true,
-      admin: { position: 'sidebar', readOnly: true },
-    },
   ],
 }

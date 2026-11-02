@@ -152,12 +152,6 @@ export interface Post {
    * แสดงในรายการข่าวและใช้เป็นคำอธิบายเมื่อไม่ได้กรอก SEO
    */
   excerpt?: string | null;
-  wpId?: number | null;
-  wpLink?: string | null;
-  /**
-   * เก็บไว้ตรวจสอบหลังย้ายระบบ ไม่ได้แสดงบนเว็บ
-   */
-  legacyHtml?: string | null;
   contentHtml?: string | null;
   /**
    * ไม่ได้ใช้ใน URL (URL ใช้หมวดหมู่และเลขบทความ)
@@ -214,7 +208,6 @@ export interface Media {
     | number
     | boolean
     | null;
-  wpId?: number | null;
   prefix?: string | null;
   _objectKey?: string | null;
   updatedAt: string;
@@ -246,7 +239,6 @@ export interface Category {
    * เช่น หมวด “สไลด์” ที่ใช้จัดหน้าแรกเท่านั้น
    */
   noindex?: boolean | null;
-  wpId?: number | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -278,7 +270,6 @@ export interface Tag {
    * นับอัตโนมัติเมื่อบันทึกบทความ ใช้เรียงแท็กยอดนิยมและซ่อนแท็กว่าง
    */
   postCount?: number | null;
-  wpId?: number | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -312,7 +303,6 @@ export interface User {
   showByline?: boolean | null;
   bio?: string | null;
   avatar?: (number | null) | Media;
-  wpId?: number | null;
   updatedAt: string;
   createdAt: string;
   enableAPIKey?: boolean | null;
@@ -363,7 +353,6 @@ export interface Page {
   slug: string;
   featuredImage?: (number | null) | Media;
   publishedAt?: string | null;
-  wpId?: number | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -482,9 +471,6 @@ export interface PostsSelect<T extends boolean = true> {
   featuredImage?: T;
   content?: T;
   excerpt?: T;
-  wpId?: T;
-  wpLink?: T;
-  legacyHtml?: T;
   contentHtml?: T;
   slug?: T;
   publishedAt?: T;
@@ -520,7 +506,6 @@ export interface PagesSelect<T extends boolean = true> {
   slug?: T;
   featuredImage?: T;
   publishedAt?: T;
-  wpId?: T;
   meta?:
     | T
     | {
@@ -548,7 +533,6 @@ export interface CategoriesSelect<T extends boolean = true> {
   order?: T;
   showInMenu?: T;
   noindex?: T;
-  wpId?: T;
   meta?:
     | T
     | {
@@ -572,7 +556,6 @@ export interface TagsSelect<T extends boolean = true> {
   slug?: T;
   description?: T;
   postCount?: T;
-  wpId?: T;
   meta?:
     | T
     | {
@@ -597,7 +580,6 @@ export interface MediaSelect<T extends boolean = true> {
   credit?: T;
   sizesReady?: T;
   sizes?: T;
-  wpId?: T;
   prefix?: T;
   _objectKey?: T;
   updatedAt?: T;
@@ -621,7 +603,6 @@ export interface UsersSelect<T extends boolean = true> {
   showByline?: T;
   bio?: T;
   avatar?: T;
-  wpId?: T;
   updatedAt?: T;
   createdAt?: T;
   enableAPIKey?: T;
