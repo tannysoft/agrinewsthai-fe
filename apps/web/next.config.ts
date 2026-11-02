@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       ...mediaHosts,
-      { protocol: "https", hostname: "media.agrinewsthai.com" },
+      { protocol: "https", hostname: "files.agrinewsthai.com" },
       { protocol: "https", hostname: "cms.agrinewsthai.com" },
       { protocol: "https", hostname: "www.agrinewsthai.com", pathname: "/wp-content/**" },
       { protocol: "https", hostname: "agrinewsthai.com", pathname: "/wp-content/**" },

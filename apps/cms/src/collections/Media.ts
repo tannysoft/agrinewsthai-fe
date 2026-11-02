@@ -2,9 +2,10 @@ import type { CollectionConfig } from 'payload'
 import { isStaff } from '../access'
 
 /**
- * Images and files (WordPress `attachment`). Stored in R2 under
- * `uploads/{yyyy}/{mm}/{filename}` — the same layout as wp-content/uploads,
- * so migrated files keep their paths. Resized variants are produced on the
+ * Images and files (WordPress `attachment`). Stored in the R2 bucket
+ * `agrinewsthai` (files.agrinewsthai.com) under `{yyyy}/{mm}/{filename}` —
+ * the layout of wp-content/uploads, which the bucket already used for the
+ * files offloaded from WordPress. Resized variants are produced on the
  * fly by Cloudflare Images on the website, so no sizes are generated here
  * (sharp isn't available on Workers).
  */
@@ -28,7 +29,7 @@ export const Media: CollectionConfig = {
         if (operation === 'create' && !data.prefix) {
           const now = new Date()
           const mm = String(now.getUTCMonth() + 1).padStart(2, '0')
-          data.prefix = `uploads/${now.getUTCFullYear()}/${mm}`
+          data.prefix = `${now.getUTCFullYear()}/${mm}`
         }
         return data
       },

@@ -17,18 +17,17 @@
       "database_id": "00000000-0000-0000-0000-000000000000"
     }
   ],
-  // `wrangler r2 bucket create agrinewsthai-media`, then connect a custom
-  // domain (media.agrinewsthai.com) in the dashboard and set MEDIA_URL.
+  // Existing bucket (files offloaded from WordPress), public at files.agrinewsthai.com
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "agrinewsthai-media"
+      "bucket_name": "agrinewsthai"
     }
   ],
   "vars": {
     "CMS_URL": "https://cms.agrinewsthai.com",
     "WEB_URL": "https://www.agrinewsthai.com",
-    "MEDIA_URL": "https://media.agrinewsthai.com"
+    "MEDIA_URL": "https://files.agrinewsthai.com"
   },
   // Secrets (wrangler secret put …): PAYLOAD_SECRET, REVALIDATE_SECRET, PREVIEW_SECRET
   // Uncomment once the agrinewsthai.com zone is on Cloudflare:
@@ -46,7 +45,7 @@
           "remote": true
         }
       ],
-      "r2_buckets": [{ "binding": "R2", "bucket_name": "agrinewsthai-media", "remote": true }]
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "agrinewsthai", "remote": true }]
     }
   }
 }

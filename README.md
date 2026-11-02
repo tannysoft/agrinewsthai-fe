@@ -49,7 +49,7 @@ pnpm --filter @agrinewsthai/cms migrate:db
 | page | `pages` | หน้า slug `topic-{slug}` = คู่มือ + FAQ ของหน้า /topic |
 | category | `categories` | ลำดับเมนู, ซ่อนจากเมนู, noindex |
 | post_tag | `tags` | `postCount` นับอัตโนมัติ |
-| attachment | `media` | ไฟล์ใน R2 ที่ path เดิม `uploads/{ปี}/{เดือน}/{ไฟล์}` |
+| attachment | `media` | ไฟล์ใน R2 bucket `agrinewsthai` (files.agrinewsthai.com) ที่ path `{ปี}/{เดือน}/{ไฟล์}` เหมือน wp-content/uploads |
 | user | `users` | บทบาท admin / editor / author, เลือกได้ว่าจะแสดงชื่อเป็นผู้เขียนหรือ “กองบรรณาธิการ” |
 | Rank Math | `meta` (SEO plugin) | title, description, รูป OG, คีย์เวิร์ดหลัก, canonical, noindex/nofollow |
 
@@ -76,13 +76,15 @@ pnpm migrate:wp --steps=files            # คัดลอกไฟล์สื�
 
 ### คัดลอกไฟล์สื่อเข้า R2
 
+ใช้ bucket `agrinewsthai` เดิม (เปิดที่ files.agrinewsthai.com) ซึ่งมีไฟล์ที่ WordPress offload ไว้ถึงราวต้นปี 2024 อยู่แล้ว สคริปต์จะตรวจทีละไฟล์และดาวน์โหลดเฉพาะที่ยังไม่มี
+
 ไฟล์ต้นฉบับประมาณ 1 แสนไฟล์ เร็วที่สุดคือผ่าน S3 API ของ R2: สร้าง API token ของ R2 แล้วใส่ใน `apps/cms/.env`
 
 ```
 R2_ACCOUNT_ID=...
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
-R2_BUCKET=agrinewsthai-media
+R2_BUCKET=agrinewsthai
 ```
 
 แล้วรัน `pnpm migrate:wp --steps=files` (รันซ้ำได้ จะข้ามไฟล์ที่คัดลอกแล้ว) ถ้าไม่ตั้งค่าเหล่านี้ สคริปต์จะใช้ R2 binding ของ wrangler แทน
@@ -94,7 +96,6 @@ R2_BUCKET=agrinewsthai-media
 ```bash
 cd apps/cms
 npx wrangler d1 create agrinewsthai-cms          # → database_id ใน apps/cms/wrangler.jsonc
-npx wrangler r2 bucket create agrinewsthai-media # เปิด custom domain media.agrinewsthai.com ใน dashboard
 npx wrangler secret put PAYLOAD_SECRET
 npx wrangler secret put REVALIDATE_SECRET
 npx wrangler secret put PREVIEW_SECRET
@@ -132,4 +133,4 @@ Workers ทั้งสองใช้ Workers Paid plan (ขนาด bundle �
 1. งดแก้ไขใน WordPress
 2. `pnpm migrate:wp --since=<วันที่ย้ายรอบแรก>` แล้ว `--steps=files` อีกรอบ เพื่อเก็บของที่เพิ่ม/แก้หลังย้ายรอบแรก (ถ้าย้ายลง local ให้ใช้ `PAYLOAD_REMOTE=1` เขียนตรงเข้า D1 remote)
 3. เปิด `routes` ใน `apps/web/wrangler.jsonc` (www.agrinewsthai.com) และ `apps/cms/wrangler.jsonc` (cms.agrinewsthai.com) แล้ว deploy
-4. Redirect `/wp-content/uploads/*` → `https://media.agrinewsthai.com/uploads/*` (Cloudflare Redirect Rule) เพื่อให้ลิงก์ภาพเดิมยังใช้ได้
+4. Redirect `/wp-content/uploads/*` → `https://files.agrinewsthai.com/*` (Cloudflare Redirect Rule) เพื่อให้ลิงก์ภาพเดิมยังใช้ได้

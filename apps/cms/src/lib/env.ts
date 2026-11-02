@@ -2,8 +2,8 @@
 export const WEB_URL = (process.env.WEB_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 /**
- * Public base URL of the R2 media bucket (custom domain, e.g.
- * https://media.agrinewsthai.com). When unset, files are served through
+ * Public base URL of the R2 media bucket (custom domain:
+ * https://files.agrinewsthai.com). When unset, files are served through
  * Payload's own /api/media/file route.
  */
 export const MEDIA_URL = (process.env.MEDIA_URL || '').replace(/\/$/, '')

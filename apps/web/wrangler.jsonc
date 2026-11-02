@@ -18,7 +18,7 @@
   "vars": {
     "CMS_SOURCE": "payload",
     "CMS_URL": "https://cms.agrinewsthai.com",
-    "MEDIA_URL": "https://media.agrinewsthai.com"
+    "MEDIA_URL": "https://files.agrinewsthai.com"
   },
   // Secrets (wrangler secret put …): REVALIDATE_SECRET and PREVIEW_SECRET (same
   // values as the CMS), CMS_PREVIEW_API_KEY (API key of a CMS user, for drafts).

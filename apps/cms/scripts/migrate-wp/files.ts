@@ -3,9 +3,10 @@ import path from 'node:path'
 import type { Payload } from 'payload'
 
 /**
- * Copy every media file from wp-content/uploads into R2 at the same path
- * (uploads/{yyyy}/{mm}/{file}). Originals only: resized versions are made
- * on the fly by Cloudflare Images.
+ * Copy media files from wp-content/uploads into R2 at the same path
+ * ({yyyy}/{mm}/{file}). The bucket already holds the files WordPress
+ * offloaded until 2024, so only missing ones are downloaded. Originals only:
+ * resized versions are made on the fly by Cloudflare Images.
  *
  * Two ways to reach R2:
  *  - S3 API, when R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY /
@@ -88,8 +89,7 @@ export async function copyFiles(payload: Payload, opts: { wpBase: string; concur
           const key = [m.prefix, m.filename].filter(Boolean).join('/')
           try {
             if (!(await r2.exists(key))) {
-              const rel = key.replace(/^uploads\//, '')
-              const url = `${opts.wpBase}/wp-content/uploads/${rel.split('/').map(encodeURIComponent).join('/')}`
+              const url = `${opts.wpBase}/wp-content/uploads/${key.split('/').map(encodeURIComponent).join('/')}`
               const r = await fetch(url)
               if (!r.ok) throw new Error(`${r.status} ${url}`)
               const body = await r.arrayBuffer()

@@ -193,7 +193,7 @@ function mediaData(m: WPMedia) {
   return {
     id: m.id,
     filename: path.posix.basename(rel),
-    prefix: dir && dir !== '.' ? `uploads/${dir}` : 'uploads',
+    prefix: dir && dir !== '.' ? dir : null,
     mimeType: m.mime_type,
     filesize: m.media_details?.filesize ?? null,
     width: m.media_details?.width ?? null,
@@ -247,7 +247,7 @@ async function loadMediaIndex(payload: Payload): Promise<MediaIndex> {
     })
     for (const m of res.docs as unknown as MediaLite[]) {
       byId.set(m.id, m)
-      if (m.filename) byPath.set(`${(m.prefix ?? '').replace(/^uploads\/?/, '')}/${m.filename}`.replace(/^\//, ''), m.id)
+      if (m.filename) byPath.set([m.prefix, m.filename].filter(Boolean).join('/'), m.id)
     }
     if (!res.hasNextPage) break
     page++

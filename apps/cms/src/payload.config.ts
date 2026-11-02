@@ -77,7 +77,6 @@ export default buildConfig({
       bucket: cloudflare.env.R2 as never,
       collections: {
         media: {
-          prefix: 'uploads',
           // Serve files straight from the public R2 domain when it's configured.
           ...(MEDIA_URL
             ? {
