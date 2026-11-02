@@ -1,6 +1,6 @@
 /**
- * Resized copies of every library image, matching what the website renders
- * (apps/cms/src/lib/image-sizes.ts must stay identical):
+ * Resized copies of every library image, matching what the website renders.
+ * Shared by the CMS (generates them) and the website (requests them):
  *   thumbnail  list thumbnails (72–208 px wide on screen)
  *   medium     cards and the homepage grid (≈30–55% of the viewport)
  *   large      lead story, article hero and body images (≈880 px column)

@@ -1,5 +1,5 @@
 import * as cms from "./payload";
-import { IMAGE_SIZES, RESIZABLE, sizeKey } from "./image-sizes";
+import { IMAGE_SIZES, RESIZABLE, sizeKey } from "@agrinewsthai/shared/image-sizes";
 
 export const WP_BASE = "https://www.agrinewsthai.com";
 export const WP_API = `${WP_BASE}/wp-json/wp/v2`;
@@ -383,7 +383,7 @@ function resizedSrc(img: string): string {
   const original = resolveMediaKey(key);
   const mime = /\.png$/i.test(key) ? "image/png" : /\.(jpe?g)$/i.test(key) ? "image/jpeg" : /\.webp$/i.test(key) ? "image/webp" : "";
   if (!RESIZABLE.test(mime)) return img.replace(src, original);
-  // The resized WebP copies the CMS keeps next to every image (lib/image-sizes.ts).
+  // The resized WebP copies the CMS keeps next to every image (packages/shared/src/image-sizes.ts).
   const copy = (w: number) => resolveMediaKey(sizeKey(key, w));
   const srcset = Object.values(IMAGE_SIZES).map((w) => `${copy(w)} ${w}w`).join(", ");
   // WebP copies for current browsers; the original JPG/PNG for the rest.
@@ -394,10 +394,11 @@ function resizedSrc(img: string): string {
   return `<picture><source type="image/webp" srcset="${srcset}" sizes="(max-width: 800px) 100vw, 760px" />${tag.replace(/<img\b/i, `<img${fallback}`)}</picture>`;
 }
 
-/** Target widths for the size names pages ask for (CMS sizes: lib/image-sizes.ts). */
+/** Target widths for the size names pages ask for (CMS sizes: packages/shared/src/image-sizes.ts). */
 const TARGET_WIDTH = { medium: 320, medium_large: 768, large: 1280, full: Infinity } as const;
-// WordPress crops these to fixed shapes; they'd distort in a srcset.
-const CROPPED = new Set(["thumbnail", "post-thumbnail"]);
+// WordPress crops these to fixed shapes; they'd distort in a srcset. (The
+// CMS's own "thumbnail" is an uncropped 320px copy, so keep it there.)
+const CROPPED = USE_PAYLOAD ? new Set<string>() : new Set(["thumbnail", "post-thumbnail"]);
 
 export type FeaturedImage = {
   src: string;
@@ -454,7 +455,8 @@ export function getPrimaryCategory(post: WPPost): WPTerm | null {
  */
 export function getPostHref(post: WPPost): string {
   const cat = getPrimaryCategory(post);
-  return `/${cat?.slug ?? "news"}/${post.id}`;
+  // "slide" only drives the homepage carousel; its stories live under /news.
+  return `/${cat && cat.slug !== "slide" ? cat.slug : "news"}/${post.id}`;
 }
 
 /**

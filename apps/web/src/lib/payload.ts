@@ -19,7 +19,7 @@ type PMedia = {
   alt?: string | null;
   width?: number | null;
   height?: number | null;
-  /** Resized copies (CMS lib/image-sizes.ts); null for GIF/SVG. */
+  /** Resized copies (packages/shared/src/image-sizes.ts); null until generated, and for GIF/SVG. */
   sizes?: Record<string, { url: string; width: number; height: number | null }> | null;
 };
 type PTerm = { id: number; name: string; slug: string; description?: string | null; postCount?: number | null; parent?: number | PTerm | null };
@@ -168,9 +168,13 @@ export function toWPPost(p: PPost): CMSPost {
 
 // ---------- queries ----------
 
-/** "Now" rounded to 5 minutes: hides scheduled stories while keeping fetch URLs cacheable. */
+/**
+ * "Now" rounded *up* to 5 minutes: keeps fetch URLs cacheable, and a story
+ * published a moment ago is included right away (the CMS revalidates on
+ * publish). Scheduled stories may appear up to 5 minutes early.
+ */
 function publishedNow(): Where {
-  const t = Math.floor(Date.now() / 300_000) * 300_000;
+  const t = Math.ceil(Date.now() / 300_000) * 300_000;
   return { publishedAt: { less_than_equal: new Date(t).toISOString() } };
 }
 
@@ -320,8 +324,12 @@ export async function findPostBySlug(slug: string): Promise<CMSPost | null> {
   return doc ? toWPPost(doc) : null;
 }
 
+/**
+ * Published-story count. No time filter, so the URL (and its hour-long cache)
+ * stays stable; counts only sort and hide empty categories.
+ */
 export async function countPosts(where: Where = {}) {
-  const res = await cms<{ totalDocs: number }>("/posts/count", { where: { and: [publishedNow(), where] } }, ["posts"], 3600);
+  const res = await cms<{ totalDocs: number }>("/posts/count", { where: { and: [{ _status: { equals: "published" } }, where] } }, ["posts"], 3600);
   return res?.totalDocs ?? 0;
 }
 

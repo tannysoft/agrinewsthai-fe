@@ -1,5 +1,6 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 import { WEB_URL } from '../lib/env'
+import { isDraftSave } from './draft-save'
 
 /**
  * Tell the website which cached data changed. The website maps these tags
@@ -40,7 +41,9 @@ const tagsFor = (collection: string, doc: Record<string, unknown>): string[] => 
 export const revalidateAfterChange =
   (collection: string): CollectionAfterChangeHook =>
   async ({ doc, previousDoc, req, context }) => {
-    if (context.disableRevalidate) return doc
+    if (context.disableRevalidate || isDraftSave(req)) return doc
+    // Nothing public changed: never published before or after this save.
+    if (doc._status === 'draft' && previousDoc?._status !== 'published') return doc
     const tags = new Set(tagsFor(collection, doc))
     if (previousDoc?.slug && previousDoc.slug !== doc.slug) tagsFor(collection, previousDoc).forEach((t) => tags.add(t))
     await notify([...tags], req)

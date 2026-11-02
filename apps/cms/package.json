@@ -38,7 +38,8 @@
     "next": "16.4.4",
     "payload": "3.92.1",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "@agrinewsthai/shared": "workspace:*"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3",

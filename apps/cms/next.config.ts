@@ -12,6 +12,8 @@ const nextConfig = {
   // Packages with Cloudflare Workers (workerd) specific code
   // Read more: https://opennext.js.org/cloudflare/howtos/workerd
   serverExternalPackages: ['jose', 'pg-cloudflare'],
+  // Workspace package shipped as TypeScript source.
+  transpilePackages: ['@agrinewsthai/shared'],
 
   // Your Next.js config here
   webpack: (webpackConfig: any) => {

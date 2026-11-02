@@ -1,6 +1,6 @@
 import type { CollectionAfterChangeHook, FieldHook } from 'payload'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
-import { IMAGE_SIZES, RESIZABLE, sizeKey } from '../lib/image-sizes'
+import { IMAGE_SIZES, RESIZABLE, sizeKey } from '@agrinewsthai/shared/image-sizes'
 import { mediaFileURL } from '../lib/env'
 
 type MediaDoc = {
@@ -64,18 +64,22 @@ export const generateSizes: CollectionAfterChangeHook = async ({ doc, previousDo
     const r2 = (env as unknown as { R2: R2Like }).R2
     if (!images) return doc
     const key = storageKey(d)
-    for (const width of Object.values(IMAGE_SIZES)) {
-      const original = await r2.get(key)
-      if (!original) return doc
-      const out = await images
-        .input(original.body)
-        .transform({ width, fit: 'scale-down' })
-        .output({ format: 'image/webp', quality: 80 })
-      const body = await out.response().arrayBuffer()
-      await r2.put(sizeKey(key, width), body, {
-        httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-      })
-    }
+    const original = await r2.get(key)
+    if (!original) return doc
+    // Read the original once, then resize to every width in parallel.
+    const bytes = new Uint8Array(await new Response(original.body).arrayBuffer())
+    await Promise.all(
+      Object.values(IMAGE_SIZES).map(async (width) => {
+        const out = await images
+          .input(new Blob([bytes]).stream())
+          .transform({ width, fit: 'scale-down' })
+          .output({ format: 'image/webp', quality: 80 })
+        const body = await out.response().arrayBuffer()
+        await r2.put(sizeKey(key, width), body, {
+          httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
+        })
+      }),
+    )
     await req.payload.update({
       collection: 'media',
       id: doc.id,

@@ -19,6 +19,9 @@ importers:
 
   apps/cms:
     dependencies:
+      '@agrinewsthai/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@opennextjs/cloudflare':
         specifier: ^1.20.15
         version: 1.20.15(next@16.4.4(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(wrangler@4.156.2(@types/node@24.19.2))
@@ -104,6 +107,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@agrinewsthai/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@opennextjs/cloudflare':
         specifier: ^1.20.15
         version: 1.20.15(next@16.4.4(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(wrangler@4.156.2(@types/node@24.19.2))
@@ -147,6 +153,8 @@ importers:
       wrangler:
         specifier: ^4.156.2
         version: 4.156.2(@types/node@24.19.2)
+
+  packages/shared: {}
 
 packages:
 

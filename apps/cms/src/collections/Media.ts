@@ -25,7 +25,9 @@ export const Media: CollectionConfig = {
   },
   hooks: {
     beforeChange: [
-      ({ data, operation }) => {
+      ({ data, originalDoc, operation }) => {
+        // A replaced file needs new resized copies before `sizes` points at them.
+        if (operation === 'update' && data.filename && data.filename !== originalDoc?.filename) data.sizesReady = false
         // New uploads go to a year/month folder, like WordPress.
         if (operation === 'create' && !data.prefix) {
           const now = new Date()
@@ -50,7 +52,7 @@ export const Media: CollectionConfig = {
       admin: { hidden: true },
     },
     {
-      // URLs of the resized copies the website uses (see lib/image-sizes.ts).
+      // URLs of the resized copies the website uses (see packages/shared/src/image-sizes.ts).
       name: 'sizes',
       type: 'json',
       virtual: true,

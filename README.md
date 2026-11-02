@@ -8,6 +8,8 @@ Monorepo ของเว็บไซต์และระบบจัดกา�
 | `apps/cms` | Payload CMS 3 ใช้เป็นระบบหลังบ้านแทน WordPress | Cloudflare Workers + D1 (ฐานข้อมูล) + R2 (ไฟล์สื่อ) |
 
 ```
+packages/
+  shared/  โค้ดที่ CMS และเว็บใช้ร่วมกัน (ขนาดรูปย่อ)
 apps/
   web/   เว็บไซต์ — อ่านเนื้อหาจาก CMS ผ่าน REST API
   cms/   Payload CMS — /admin สำหรับกองบรรณาธิการ
@@ -57,7 +59,7 @@ pnpm --filter @agrinewsthai/cms migrate:db
 
 ### รูปภาพ
 
-CMS สร้างรูปย่อเป็น WebP ตามขนาดที่หน้าเว็บใช้จริง (`apps/cms/src/lib/image-sizes.ts` — ต้องตรงกับ `apps/web/src/lib/image-sizes.ts`) เก็บข้างไฟล์ต้นฉบับใน R2 เช่น `2026/11/x.jpg` → `2026/11/x-320w.webp`, `-768w.webp`, `-1280w.webp`
+CMS สร้างรูปย่อเป็น WebP ตามขนาดที่หน้าเว็บใช้จริง (`packages/shared/src/image-sizes.ts` ใช้ร่วมกันทั้ง CMS และเว็บ) เก็บข้างไฟล์ต้นฉบับใน R2 เช่น `2026/11/x.jpg` → `2026/11/x-320w.webp`, `-768w.webp`, `-1280w.webp`
 
 - อัปโหลดใหม่ใน CMS: สร้างให้อัตโนมัติด้วย Cloudflare Images binding
 - รูปเดิมที่ย้ายมา: `pnpm migrate:wp --steps=sizes` (ย่อด้วย sharp บนเครื่อง แล้วอัปโหลดเข้า R2)

@@ -1,3 +1,4 @@
+import { isDraftSave } from './draft-save'
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, Payload, PayloadRequest } from 'payload'
 
 const ids = (v: unknown): number[] =>
@@ -22,7 +23,7 @@ export async function recountTags(payload: Payload, tagIds: number[], req?: Payl
 }
 
 export const updateTagCounts: CollectionAfterChangeHook = async ({ doc, previousDoc, req, context }) => {
-  if (context.disableTagCounts) return doc
+  if (context.disableTagCounts || isDraftSave(req)) return doc
   // Draft autosaves of an unpublished story never change public counts.
   if (doc._status !== 'published' && previousDoc?._status !== 'published') return doc
   const before = ids(previousDoc?.tags)

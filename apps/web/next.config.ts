@@ -3,8 +3,10 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const nextConfig: NextConfig = {
   // Images are plain <img> tags pointing at resized copies on the media
-  // domain (WordPress sizes, or the CMS's own — lib/image-sizes.ts).
+  // domain (WordPress sizes, or the CMS's own — packages/shared/src/image-sizes.ts).
   images: { unoptimized: true },
+  // Workspace package shipped as TypeScript source.
+  transpilePackages: ["@agrinewsthai/shared"],
   async headers() {
     // Preview hosts (SITE_NOINDEX=1) must not compete with www in search.
     if (process.env.SITE_NOINDEX !== "1") return [];

@@ -39,12 +39,16 @@ export const Posts: CollectionConfig = {
   hooks: {
     beforeChange: [
       renderContentHtml,
-      ({ data, req, operation }) => {
-        if (!data.publishedAt && data._status === 'published') data.publishedAt = new Date().toISOString()
+      ({ data, originalDoc, req, operation }) => {
+        // Partial updates (bulk publish/edit, PATCH) don't resend every field:
+        // fall back to the stored values before filling defaults.
+        if (!data.publishedAt && !originalDoc?.publishedAt && data._status === 'published')
+          data.publishedAt = new Date().toISOString()
         if (operation === 'create' && !data.author && req.user) data.author = req.user.id
         // The first category is the primary one unless an editor picked another.
-        if (!data.primaryCategory && Array.isArray(data.categories) && data.categories.length)
-          data.primaryCategory = data.categories[0]
+        const primary = data.primaryCategory ?? originalDoc?.primaryCategory
+        const categories = (data.categories ?? originalDoc?.categories) as unknown[] | undefined
+        if (!primary && Array.isArray(categories) && categories.length) data.primaryCategory = categories[0]
         return data
       },
     ],

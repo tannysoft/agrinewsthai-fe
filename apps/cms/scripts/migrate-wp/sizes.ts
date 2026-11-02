@@ -4,10 +4,10 @@ import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import sharp from 'sharp'
 import { openBucket } from './files'
-import { IMAGE_SIZES, RESIZABLE, sizeKey } from '../../src/lib/image-sizes'
+import { IMAGE_SIZES, RESIZABLE, sizeKey } from '@agrinewsthai/shared/image-sizes'
 
 /**
- * Backfill the resized WebP copies (src/lib/image-sizes.ts) for every image
+ * Backfill the resized WebP copies (packages/shared/src/image-sizes.ts) for every image
  * already in the library. Resizes with sharp on this machine (no Cloudflare
  * Images charges), reading originals from the public media domain and
  * writing the copies to the R2 bucket.
