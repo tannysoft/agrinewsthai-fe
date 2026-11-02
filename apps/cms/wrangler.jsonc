@@ -1,0 +1,52 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agrinewsthai-cms",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // `wrangler d1 create agrinewsthai-cms` → paste the id here
+  "d1_databases": [
+    {
+      "binding": "D1",
+      "database_name": "agrinewsthai-cms",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  // `wrangler r2 bucket create agrinewsthai-media`, then connect a custom
+  // domain (media.agrinewsthai.com) in the dashboard and set MEDIA_URL.
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "agrinewsthai-media"
+    }
+  ],
+  "vars": {
+    "CMS_URL": "https://cms.agrinewsthai.com",
+    "WEB_URL": "https://www.agrinewsthai.com",
+    "MEDIA_URL": "https://media.agrinewsthai.com"
+  },
+  // Secrets (wrangler secret put …): PAYLOAD_SECRET, REVALIDATE_SECRET, PREVIEW_SECRET
+  // Uncomment once the agrinewsthai.com zone is on Cloudflare:
+  // "routes": [{ "pattern": "cms.agrinewsthai.com", "custom_domain": true }],
+  // Used by scripts and `payload migrate` on your machine to reach the real
+  // D1/R2 (PAYLOAD_REMOTE=1, or NODE_ENV=production for the payload CLI).
+  // Keep ids in sync with the top-level bindings.
+  "env": {
+    "remote": {
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_name": "agrinewsthai-cms",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "remote": true
+        }
+      ],
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "agrinewsthai-media", "remote": true }]
+    }
+  }
+}

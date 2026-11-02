@@ -1,0 +1,154 @@
+import type { CollectionConfig } from 'payload'
+import { ownPostsOrEditor, publishedOrStaff, isStaff } from '../access'
+import { articleEditor } from '../lib/editor'
+import { slugFrom } from '../lib/slug'
+import { WEB_URL } from '../lib/env'
+import { renderContentHtml } from '../hooks/content-html'
+import { revalidateAfterChange, revalidateAfterDelete } from '../hooks/revalidate'
+import { updateTagCounts, updateTagCountsOnDelete } from '../hooks/tag-counts'
+
+/**
+ * News stories and articles (WordPress `post`). The document id is the
+ * WordPress post id for imported stories, so URLs stay /{category}/{id}.
+ */
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  labels: { singular: 'ข่าว / บทความ', plural: 'ข่าว / บทความ' },
+  admin: {
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'primaryCategory', 'author', 'publishedAt', '_status'],
+    group: 'เนื้อหา',
+    listSearchableFields: ['title', 'slug'],
+    // Opens the story on the website in draft mode (apps/web/src/app/api/preview).
+    preview: (doc) =>
+      process.env.PREVIEW_SECRET
+        ? `${WEB_URL}/api/preview?id=${doc.id}&secret=${encodeURIComponent(process.env.PREVIEW_SECRET)}`
+        : `${WEB_URL}/news/${doc.id}`,
+  },
+  defaultSort: '-publishedAt',
+  access: {
+    read: publishedOrStaff,
+    create: isStaff,
+    update: ownPostsOrEditor,
+    delete: ownPostsOrEditor,
+  },
+  versions: {
+    drafts: { autosave: { interval: 3000 } },
+    maxPerDoc: 25,
+  },
+  hooks: {
+    beforeChange: [
+      renderContentHtml,
+      ({ data, req, operation }) => {
+        if (!data.publishedAt && data._status === 'published') data.publishedAt = new Date().toISOString()
+        if (operation === 'create' && !data.author && req.user) data.author = req.user.id
+        // The first category is the primary one unless an editor picked another.
+        if (!data.primaryCategory && Array.isArray(data.categories) && data.categories.length)
+          data.primaryCategory = data.categories[0]
+        return data
+      },
+    ],
+    afterChange: [updateTagCounts, revalidateAfterChange('posts')],
+    afterDelete: [updateTagCountsOnDelete, revalidateAfterDelete('posts')],
+  },
+  fields: [
+    { name: 'title', label: 'หัวข้อข่าว', type: 'text', required: true },
+    {
+      type: 'tabs',
+      tabs: [
+        {
+          label: 'เนื้อหา',
+          fields: [
+            { name: 'featuredImage', label: 'ภาพหน้าปก', type: 'upload', relationTo: 'media' },
+            { name: 'content', label: 'เนื้อหา', type: 'richText', editor: articleEditor },
+            {
+              name: 'excerpt',
+              label: 'เกริ่นนำ / สรุปย่อ',
+              type: 'textarea',
+              admin: { description: 'แสดงในรายการข่าวและใช้เป็นคำอธิบายเมื่อไม่ได้กรอก SEO' },
+            },
+          ],
+        },
+        {
+          label: 'ข้อมูลเดิมจาก WordPress',
+          admin: { condition: (data) => Boolean(data?.wpId) },
+          fields: [
+            { name: 'wpId', label: 'WordPress post ID', type: 'number', index: true, admin: { readOnly: true } },
+            { name: 'wpLink', label: 'URL เดิม', type: 'text', admin: { readOnly: true } },
+            {
+              name: 'legacyHtml',
+              label: 'HTML ต้นฉบับ',
+              type: 'code',
+              admin: { readOnly: true, language: 'html', description: 'เก็บไว้ตรวจสอบหลังย้ายระบบ ไม่ได้แสดงบนเว็บ' },
+            },
+          ],
+        },
+      ],
+    },
+    // Rendered body for the website; rebuilt from `content` on every save.
+    { name: 'contentHtml', type: 'textarea', admin: { hidden: true } },
+    {
+      name: 'slug',
+      type: 'text',
+      index: true,
+      admin: { position: 'sidebar', description: 'ไม่ได้ใช้ใน URL (URL ใช้หมวดหมู่และเลขบทความ)' },
+      hooks: { beforeValidate: [slugFrom('title')] },
+    },
+    {
+      name: 'publishedAt',
+      label: 'วันที่เผยแพร่',
+      type: 'date',
+      index: true,
+      admin: {
+        position: 'sidebar',
+        date: { pickerAppearance: 'dayAndTime', displayFormat: 'd MMM yyyy HH:mm' },
+        description: 'ตั้งเป็นเวลาในอนาคตเพื่อตั้งเวลาเผยแพร่',
+      },
+    },
+    {
+      name: 'categories',
+      label: 'หมวดหมู่',
+      type: 'relationship',
+      relationTo: 'categories',
+      hasMany: true,
+      required: true,
+      admin: { position: 'sidebar' },
+    },
+    {
+      name: 'primaryCategory',
+      label: 'หมวดหลัก (ใช้ใน URL)',
+      type: 'relationship',
+      relationTo: 'categories',
+      index: true,
+      admin: { position: 'sidebar', description: 'เว้นว่าง = ใช้หมวดแรก' },
+    },
+    {
+      name: 'tags',
+      label: 'แท็ก',
+      type: 'relationship',
+      relationTo: 'tags',
+      hasMany: true,
+      admin: { position: 'sidebar' },
+    },
+    { name: 'author', label: 'ผู้เขียน', type: 'relationship', relationTo: 'users', admin: { position: 'sidebar' } },
+    {
+      name: 'sticky',
+      label: 'ปักหมุด',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { position: 'sidebar' },
+    },
+    {
+      name: 'format',
+      label: 'รูปแบบ',
+      type: 'select',
+      defaultValue: 'standard',
+      options: [
+        { label: 'มาตรฐาน', value: 'standard' },
+        { label: 'วิดีโอ', value: 'video' },
+        { label: 'แกลเลอรี', value: 'gallery' },
+      ],
+      admin: { position: 'sidebar' },
+    },
+  ],
+}

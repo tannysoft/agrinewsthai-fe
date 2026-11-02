@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agrinewsthai-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // Cutover: uncomment to serve the live domain from this Worker. Until then
+  // the site runs at agrinewsthai-web.<account>.workers.dev.
+  // "routes": [
+  //   { "pattern": "www.agrinewsthai.com", "custom_domain": true },
+  //   { "pattern": "agrinewsthai.com", "custom_domain": true }
+  // ],
+  "vars": {
+    "CMS_SOURCE": "payload",
+    "CMS_URL": "https://cms.agrinewsthai.com",
+    "MEDIA_URL": "https://media.agrinewsthai.com"
+  },
+  // Secrets (wrangler secret put …): REVALIDATE_SECRET and PREVIEW_SECRET (same
+  // values as the CMS), CMS_PREVIEW_API_KEY (API key of a CMS user, for drafts).
+
+  // next/image resizing through Cloudflare Images.
+  "images": { "binding": "IMAGES" },
+
+  // OpenNext cache (see open-next.config.ts)
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "agrinewsthai-web-cache" }],
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "agrinewsthai-web-tags",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "agrinewsthai-web" }]
+}

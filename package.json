@@ -1,26 +1,22 @@
 {
-  "name": "agrinewsthai-fe",
-  "version": "0.1.0",
+  "name": "agrinewsthai",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=24.22.1"
   },
-  "dependencies": {
-    "next": "16.2.4",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter @agrinewsthai/web dev",
+    "dev:cms": "pnpm --filter @agrinewsthai/cms dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "deploy:cms": "pnpm --filter @agrinewsthai/cms deploy",
+    "deploy:web": "pnpm --filter @agrinewsthai/web deploy",
+    "migrate:wp": "pnpm --filter @agrinewsthai/cms migrate:wp"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.4",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "turbo": "^2.11.10"
   }
 }
