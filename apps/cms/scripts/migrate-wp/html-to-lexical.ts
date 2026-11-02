@@ -103,6 +103,15 @@ export function htmlToLexical(
     )
     .forEach((el) => el.remove())
 
+  // Links: trim stray spaces in href; drop links the editor would reject.
+  body.querySelectorAll('a').forEach((a) => {
+    const href = (a.getAttribute('href') ?? '').trim().replace(/\s/g, '%20')
+    if (!href || href.startsWith('javascript:')) return a.replaceWith(...a.childNodes)
+    if (/^www\./i.test(href)) a.setAttribute('href', `https://${href}`)
+    else if (!/^(https?:|mailto:|tel:|\/|#)/i.test(href)) return a.replaceWith(...a.childNodes)
+    else a.setAttribute('href', href)
+  })
+
   // 2. Galleries.
   body.querySelectorAll('figure.wp-block-gallery, .tiled-gallery, div.gallery').forEach((g) => {
     const ids = [...g.querySelectorAll('img')].map((img) => resolveMediaId(img, media)).filter((id): id is number => Boolean(id))

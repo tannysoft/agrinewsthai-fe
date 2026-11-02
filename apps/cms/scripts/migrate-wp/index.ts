@@ -4,6 +4,7 @@
  *   pnpm migrate:wp                         # everything, into local D1 (.wrangler)
  *   pnpm migrate:wp --steps=posts --limit=50
  *   pnpm migrate:wp --since=2026-11-01      # delta: posts changed since a date (upsert)
+ *   pnpm migrate:wp --steps=posts --ids=8066,9492  # re-import specific posts
  *   pnpm migrate:wp --steps=files           # check every media file in R2, upload missing ones
  *   PAYLOAD_REMOTE=1 pnpm migrate:wp …      # write straight to the Cloudflare D1/R2
  *
@@ -43,7 +44,9 @@ const ALL_STEPS = ['users', 'categories', 'tags', 'media', 'posts', 'pages', 'co
 const steps = new Set((args.steps ?? ALL_STEPS.join(',')).split(','))
 const LIMIT = args.limit ? Number(args.limit) : Infinity
 const SINCE = args.since ? new Date(args.since).toISOString() : undefined
-const UPDATE = args.update === 'true' || Boolean(SINCE)
+/** --ids=1,2,3: re-import just these posts/pages (implies --update). */
+const IDS = args.ids
+const UPDATE = args.update === 'true' || Boolean(SINCE) || Boolean(IDS)
 const CONCURRENCY = Number(args.concurrency ?? 6)
 const RANKMATH = args.rankmath !== 'false'
 const KEEP_VERSIONS = args['keep-versions'] === 'true'
@@ -57,7 +60,7 @@ type State = Record<string, { page?: number; done?: boolean }>
 const state: State = fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) : {}
 const saveState = () => fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2))
 // A filtered or partial run must not move the saved page cursor.
-const trackPages = !SINCE && LIMIT === Infinity && args.restart !== 'true'
+const trackPages = !SINCE && !IDS && LIMIT === Infinity && args.restart !== 'true'
 if (args.restart === 'true') for (const k of Object.keys(state)) delete state[k]
 
 const ctx = { disableRevalidate: true, disableTagCounts: true, skipContentHtml: true }
@@ -338,6 +341,7 @@ async function migrateContent(
     _fields: 'id,date_gmt,modified_gmt,slug,status,link,title,content,excerpt,author,featured_media,categories,tags,sticky,format',
     ...(wp.authenticated ? { status: 'publish,future,draft,pending,private', context: 'edit' } : {}),
     ...(SINCE ? { modified_after: SINCE } : {}),
+    ...(IDS ? { include: IDS } : {}),
   }
 
   const one = async (p: WPPost) => {
