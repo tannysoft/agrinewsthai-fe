@@ -141,6 +141,10 @@ pnpm deploy:web
 
 Workers ทั้งสองใช้ Workers Paid plan (ขนาด bundle ของ Payload เกิน 3 MB ของแพลนฟรี)
 
+### อีเมลของ CMS
+
+ลืมรหัสผ่านและอีเมลระบบอื่น ๆ ส่งผ่าน Cloudflare Email Sending จาก `no-reply@notify.agrinewsthai.com` (binding `EMAIL` ใน `apps/cms/wrangler.jsonc`, adapter ที่ `apps/cms/src/lib/email.ts`) — เปิดใช้ด้วย `npx wrangler email sending enable notify.agrinewsthai.com` (Cloudflare สร้าง SPF/DKIM/DMARC ให้เอง) ใช้ subdomain เพื่อไม่แตะ MX/SPF ของ agrinewsthai.com
+
 ### วันย้ายระบบจริง
 
 1. งดแก้ไขใน WordPress

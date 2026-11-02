@@ -18,6 +18,7 @@ import { Categories } from './collections/Categories'
 import { Tags } from './collections/Tags'
 import { articleEditor } from './lib/editor'
 import { mediaFileURL, MEDIA_URL, WEB_URL } from './lib/env'
+import { cloudflareEmailAdapter } from './lib/email'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -69,6 +70,8 @@ export default buildConfig({
   },
   collections: [Posts, Pages, Categories, Tags, Media, Users],
   editor: articleEditor,
+  // Forgot-password and other auth mail via Cloudflare Email Sending.
+  email: cloudflareEmailAdapter,
   secret: process.env.PAYLOAD_SECRET || '',
   cors: [WEB_URL],
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

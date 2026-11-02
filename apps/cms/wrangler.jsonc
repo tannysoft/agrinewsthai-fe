@@ -26,6 +26,9 @@
     }
   ],
   // workers.dev until cutover; then cms.agrinewsthai.com / www.agrinewsthai.com
+  // Forgot-password mail (lib/email.ts). Domain onboarded with
+  // `wrangler email sending enable notify.agrinewsthai.com`.
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["no-reply@notify.agrinewsthai.com"] }],
   // Resizes uploads into the sizes the website uses (hooks/image-sizes.ts)
   "images": { "binding": "IMAGES" },
   "vars": {
