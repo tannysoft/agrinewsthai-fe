@@ -4,7 +4,7 @@
  *   pnpm migrate:wp                         # everything, into local D1 (.wrangler)
  *   pnpm migrate:wp --steps=posts --limit=50
  *   pnpm migrate:wp --since=2026-11-01      # delta: posts changed since a date (upsert)
- *   pnpm migrate:wp --steps=files           # copy media files into R2
+ *   pnpm migrate:wp --steps=files           # check every media file in R2, upload missing ones
  *   PAYLOAD_REMOTE=1 pnpm migrate:wp …      # write straight to the Cloudflare D1/R2
  *
  * Steps run in dependency order: users → categories → tags → media → posts →
@@ -408,24 +408,37 @@ async function recountTags(payload: Payload) {
 }
 
 // ---------- run ----------
-const { default: config } = await import('../../src/payload.config')
-const payload = await getPayload({ config })
 const wp = new WordPress(WP_URL, { user: process.env.WP_USER ?? '', password: process.env.WP_APP_PASSWORD ?? '' })
 log(`WordPress ${WP_URL}${wp.authenticated ? ' (authenticated: drafts included)' : ' (public API: published content only)'}`)
-log(`target: ${process.env.PAYLOAD_REMOTE === '1' ? 'Cloudflare (remote D1/R2)' : 'local D1 (.wrangler)'}; steps: ${[...steps].join(', ')}`)
 
-if (steps.has('users')) await migrateUsers(payload, wp)
-if (steps.has('categories')) await migrateCategories(payload, wp)
-if (steps.has('tags')) await migrateTags(payload, wp)
-if (steps.has('media')) await migrateMedia(payload, wp)
-if (steps.has('posts') || steps.has('pages')) {
-  const media = await loadMediaIndex(payload)
-  const editorConfig = await editorConfigFactory.fromEditor({ config: payload.config, editor: articleEditor })
-  if (steps.has('posts')) await migrateContent(payload, wp, 'posts', media, editorConfig)
-  if (steps.has('pages')) await migrateContent(payload, wp, 'pages', media, editorConfig)
+const dbSteps = [...steps].filter((s) => s !== 'files')
+if (dbSteps.length) {
+  const { default: config } = await import('../../src/payload.config')
+  const payload = await getPayload({ config })
+  log(`target: ${process.env.PAYLOAD_REMOTE === '1' ? 'Cloudflare (remote D1/R2)' : 'local D1 (.wrangler)'}; steps: ${dbSteps.join(', ')}`)
+
+  if (steps.has('users')) await migrateUsers(payload, wp)
+  if (steps.has('categories')) await migrateCategories(payload, wp)
+  if (steps.has('tags')) await migrateTags(payload, wp)
+  if (steps.has('media')) await migrateMedia(payload, wp)
+  if (steps.has('posts') || steps.has('pages')) {
+    const media = await loadMediaIndex(payload)
+    const editorConfig = await editorConfigFactory.fromEditor({ config: payload.config, editor: articleEditor })
+    if (steps.has('posts')) await migrateContent(payload, wp, 'posts', media, editorConfig)
+    if (steps.has('pages')) await migrateContent(payload, wp, 'pages', media, editorConfig)
+  }
+  if (steps.has('counts') || steps.has('posts')) await recountTags(payload)
 }
-if (steps.has('counts') || steps.has('posts')) await recountTags(payload)
-if (steps.has('files')) await copyFiles(payload, { wpBase: WP_URL, concurrency: Number(args['file-concurrency'] ?? 16), workDir: WORK_DIR })
+
+// Files go to the real R2 bucket (not the local database), see files.ts.
+if (steps.has('files')) {
+  await copyFiles(wp, {
+    concurrency: Number(args['file-concurrency'] ?? 16),
+    workDir: WORK_DIR,
+    local: args['local-r2'] === 'true',
+    since: SINCE,
+  })
+}
 
 log('done')
 process.exit(0)

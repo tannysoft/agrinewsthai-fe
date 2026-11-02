@@ -1,26 +1,34 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { Payload } from 'payload'
+import type { WordPress, WPMedia } from './wp'
 
 /**
- * Copy media files from wp-content/uploads into R2 at the same path
- * ({yyyy}/{mm}/{file}). The bucket already holds the files WordPress
- * offloaded until 2024, so only missing ones are downloaded. Originals only:
- * resized versions are made on the fly by Cloudflare Images.
+ * Check every WordPress media file against the R2 bucket and upload the ones
+ * that are missing, at the same path as wp-content/uploads ({yyyy}/{mm}/{file}).
+ * The bucket already holds the files WordPress offloaded until 2024, so most
+ * checks are a quick HEAD. Originals only: resized versions are made on the
+ * fly by Cloudflare Images.
  *
- * Two ways to reach R2:
- *  - S3 API, when R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY /
- *    R2_BUCKET are set (fastest for the full 100k-file copy);
- *  - otherwise the Worker binding from wrangler (local R2, or the real bucket
- *    with PAYLOAD_REMOTE=1).
- * Copied ids are logged to .migrate/files-done.txt so re-runs skip them.
+ * The list comes straight from the WordPress API (not the CMS database), so
+ * this step can run on its own, even while other steps are importing.
+ *
+ * R2 access, in order of preference:
+ *  - S3 API when R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET are set;
+ *  - otherwise the real bucket through your `wrangler login` (the "files" env in wrangler.jsonc);
+ *  - `--local-r2` writes to the local .wrangler bucket instead (testing).
+ * Progress: checked ids in .migrate/files-done.txt, failures in .migrate/files-failed.tsv.
  */
-type Put = (key: string, body: ArrayBuffer, contentType: string) => Promise<void>
-type Exists = (key: string) => Promise<boolean>
+type Bucket = {
+  label: string
+  exists: (key: string) => Promise<boolean>
+  put: (key: string, body: ArrayBuffer, contentType: string) => Promise<void>
+}
 
-async function r2Client(): Promise<{ put: Put; exists: Exists; label: string }> {
+const CACHE = 'public, max-age=31536000, immutable'
+
+async function openBucket(local: boolean): Promise<Bucket> {
   const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET } = process.env
-  if (R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET) {
+  if (!local && R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET) {
     const { S3Client, PutObjectCommand, HeadObjectCommand } = await import('@aws-sdk/client-s3')
     const s3 = new S3Client({
       region: 'auto',
@@ -29,9 +37,6 @@ async function r2Client(): Promise<{ put: Put; exists: Exists; label: string }> 
     })
     return {
       label: `R2 bucket ${R2_BUCKET} (S3 API)`,
-      put: async (Key, body, ContentType) => {
-        await s3.send(new PutObjectCommand({ Bucket: R2_BUCKET, Key, Body: new Uint8Array(body), ContentType, CacheControl: 'public, max-age=31536000, immutable' }))
-      },
       exists: async (Key) => {
         try {
           await s3.send(new HeadObjectCommand({ Bucket: R2_BUCKET, Key }))
@@ -40,79 +45,104 @@ async function r2Client(): Promise<{ put: Put; exists: Exists; label: string }> 
           return false
         }
       },
+      put: async (Key, body, ContentType) => {
+        await s3.send(new PutObjectCommand({ Bucket: R2_BUCKET, Key, Body: new Uint8Array(body), ContentType, CacheControl: CACHE }))
+      },
     }
   }
-  const { cloudflare } = await import('../../src/payload.config')
-  const bucket = cloudflare.env.R2 as unknown as {
-    put: (k: string, v: ArrayBuffer, o: object) => Promise<unknown>
-    head: (k: string) => Promise<unknown>
-  }
+
+  const { getPlatformProxy } = await import('wrangler')
+  const proxy = await getPlatformProxy<{ R2: R2Like }>({
+    configPath: path.resolve(import.meta.dirname, '../../wrangler.jsonc'),
+    environment: local ? undefined : 'files',
+    remoteBindings: !local,
+    persist: process.env.WRANGLER_PERSIST_TO ? { path: process.env.WRANGLER_PERSIST_TO } : undefined,
+  })
+  const r2 = proxy.env.R2
   return {
-    label: process.env.PAYLOAD_REMOTE === '1' ? 'R2 binding (remote)' : 'R2 binding (local .wrangler)',
+    label: local ? 'local R2 (.wrangler)' : 'R2 bucket agrinewsthai (via wrangler login)',
+    exists: async (key) => Boolean(await r2.head(key)),
     put: async (key, body, contentType) => {
-      await bucket.put(key, body, { httpMetadata: { contentType, cacheControl: 'public, max-age=31536000, immutable' } })
+      await r2.put(key, body, { httpMetadata: { contentType, cacheControl: CACHE } })
     },
-    exists: async (key) => Boolean(await bucket.head(key)),
   }
 }
 
-export async function copyFiles(payload: Payload, opts: { wpBase: string; concurrency: number; workDir: string }) {
-  const r2 = await r2Client()
-  const doneFile = path.join(opts.workDir, 'files-done.txt')
+type R2Like = {
+  head: (k: string) => Promise<unknown>
+  put: (k: string, v: ArrayBuffer, o: object) => Promise<unknown>
+}
+
+/** Storage key of a WordPress attachment: its path under wp-content/uploads. */
+export function mediaKey(m: Pick<WPMedia, 'media_details' | 'source_url'>): string | null {
+  if (m.media_details?.file) return m.media_details.file
+  try {
+    return decodeURIComponent(new URL(m.source_url).pathname).split('/wp-content/uploads/')[1] ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function copyFiles(
+  wp: WordPress,
+  opts: { concurrency: number; workDir: string; local: boolean; since?: string },
+) {
+  const bucket = await openBucket(opts.local)
+  const doneFile = path.join(opts.workDir, opts.local ? 'files-done-local.txt' : 'files-done.txt')
   const failFile = path.join(opts.workDir, 'files-failed.tsv')
   const done = new Set(fs.existsSync(doneFile) ? fs.readFileSync(doneFile, 'utf8').split('\n').filter(Boolean).map(Number) : [])
   const doneOut = fs.createWriteStream(doneFile, { flags: 'a' })
   const failOut = fs.createWriteStream(failFile, { flags: 'a' })
-  console.log(`files → ${r2.label}; ${done.size} already copied`)
+  console.log(`files → ${bucket.label}; ${done.size} already checked`)
 
-  let page = 1
-  let copied = 0
+  let present = 0
+  let uploaded = 0
   let failed = 0
   let bytes = 0
   const started = Date.now()
-  for (;;) {
-    const res = await payload.find({
-      collection: 'media',
-      limit: 500,
-      page,
-      depth: 0,
-      sort: 'id',
-      overrideAccess: true,
-      select: { filename: true, prefix: true, mimeType: true },
-    })
-    const todo = res.docs.filter((d) => !done.has(d.id as number))
+  const params = {
+    _fields: 'id,source_url,mime_type,media_details',
+    ...(opts.since ? { modified_after: opts.since } : {}),
+  }
+
+  for await (const { items, page, totalPages } of wp.pages<WPMedia>('/media', params)) {
+    const todo = items.filter((m) => !done.has(m.id))
     let i = 0
     await Promise.all(
       Array.from({ length: Math.min(opts.concurrency, todo.length) }, async () => {
         while (i < todo.length) {
-          const m = todo[i++] as { id: number; filename: string; prefix?: string; mimeType?: string }
-          const key = [m.prefix, m.filename].filter(Boolean).join('/')
+          const m = todo[i++]
+          const key = mediaKey(m)
           try {
-            if (!(await r2.exists(key))) {
-              const url = `${opts.wpBase}/wp-content/uploads/${key.split('/').map(encodeURIComponent).join('/')}`
-              const r = await fetch(url)
-              if (!r.ok) throw new Error(`${r.status} ${url}`)
-              const body = await r.arrayBuffer()
-              await r2.put(key, body, m.mimeType || r.headers.get('content-type') || 'application/octet-stream')
+            if (!key) throw new Error('no file path')
+            if (await bucket.exists(key)) {
+              present++
+            } else {
+              const url = `${wp.base}/wp-content/uploads/${key.split('/').map(encodeURIComponent).join('/')}`
+              const res = await wp.fetch(url, 4)
+              if (!res.ok) throw new Error(`${res.status} ${url}`)
+              const body = await res.arrayBuffer()
+              await bucket.put(key, body, m.mime_type || res.headers.get('content-type') || 'application/octet-stream')
+              uploaded++
               bytes += body.byteLength
             }
-            copied++
             doneOut.write(`${m.id}\n`)
           } catch (err) {
             failed++
-            failOut.write(`${m.id}\t${key}\t${(err as Error).message}\n`)
+            failOut.write(`${m.id}\t${key ?? ''}\t${(err as Error).message}\n`)
           }
         }
       }),
     )
-    const secs = (Date.now() - started) / 1000
-    console.log(
-      `files page ${page}/${res.totalPages}: copied ${copied}, failed ${failed}, ${(bytes / 1e9).toFixed(2)} GB, ${(copied / Math.max(secs, 1)).toFixed(1)} files/s`,
-    )
-    if (!res.hasNextPage) break
-    page++
+    if (page % 10 === 0 || page === totalPages) {
+      const mins = (Date.now() - started) / 60000
+      console.log(
+        `${new Date().toISOString().slice(11, 19)} files page ${page}/${totalPages}: already in bucket ${present}, uploaded ${uploaded} (${(bytes / 1e9).toFixed(2)} GB), failed ${failed} — ${mins.toFixed(1)} min`,
+      )
+    }
   }
   doneOut.end()
   failOut.end()
-  if (failed) console.log(`failed files listed in ${failFile} — re-run the step to retry`)
+  console.log(`files done: already in bucket ${present}, uploaded ${uploaded}, failed ${failed}`)
+  if (failed) console.log(`failures in ${failFile} — run the step again to retry them`)
 }

@@ -46,6 +46,11 @@
         }
       ],
       "r2_buckets": [{ "binding": "R2", "bucket_name": "agrinewsthai", "remote": true }]
+    },
+    // Only the real media bucket: `migrate:wp --steps=files` checks/uploads
+    // files there while the database stays local.
+    "files": {
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "agrinewsthai", "remote": true }]
     }
   }
 }
