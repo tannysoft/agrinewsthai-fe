@@ -6,6 +6,7 @@
  *   pnpm migrate:wp --since=2026-11-01      # delta: posts changed since a date (upsert)
  *   pnpm migrate:wp --steps=posts --ids=8066,9492  # re-import specific posts
  *   pnpm migrate:wp --steps=files           # check every media file in R2, upload missing ones
+ *   pnpm migrate:wp --steps=sizes           # make the resized WebP copies the website uses
  *   PAYLOAD_REMOTE=1 pnpm migrate:wp …      # write straight to the Cloudflare D1/R2
  *
  * Steps run in dependency order: users → categories → tags → media → posts →
@@ -27,6 +28,7 @@ import { WordPress, type WPMedia, type WPPost, type WPTerm, type WPUser } from '
 import { htmlToLexical, resolveMediaUrl, type MediaIndex } from './html-to-lexical'
 import { cleanExcerpt, decodeEntities, decodeSlug, gmt, looksLikeRealName, stripHtml } from './text'
 import { copyFiles } from './files'
+import { generateSizes } from './sizes'
 import { lexicalToHTML, type MediaLite } from '../../src/lib/lexical-html'
 import { articleEditor } from '../../src/lib/editor'
 import { CATEGORY_COPY, NOINDEX_CATEGORY_SLUGS } from '../../../web/src/lib/categories'
@@ -341,7 +343,6 @@ async function migrateContent(
     _fields: 'id,date_gmt,modified_gmt,slug,status,link,title,content,excerpt,author,featured_media,categories,tags,sticky,format',
     ...(wp.authenticated ? { status: 'publish,future,draft,pending,private', context: 'edit' } : {}),
     ...(SINCE ? { modified_after: SINCE } : {}),
-    ...(IDS ? { include: IDS } : {}),
   }
 
   const one = async (p: WPPost) => {
@@ -405,7 +406,10 @@ async function migrateContent(
     }
   }
 
-  for await (const { items, page, totalPages, total } of wp.pages<WPPost>(`/${kind}`, params, trackPages ? (state[key]?.page ?? 0) + 1 : 1)) {
+  // --ids: fetch in groups of 100 (a long include= list overflows WordPress's response headers).
+  const idGroups = IDS ? IDS.split(',').reduce<string[][]>((g, id, i) => (i % 100 ? g[g.length - 1].push(id) : g.push([id]), g), []) : [null]
+  for (const group of idGroups)
+  for await (const { items, page, totalPages, total } of wp.pages<WPPost>(`/${kind}`, group ? { ...params, include: group.join(',') } : params, trackPages ? (state[key]?.page ?? 0) + 1 : 1)) {
     const batch = items.slice(0, Math.max(0, LIMIT - seen))
     seen += batch.length
     await pool(batch, CONCURRENCY, one)
@@ -443,7 +447,7 @@ async function recountTags(payload: Payload) {
 const wp = new WordPress(WP_URL, { user: process.env.WP_USER ?? '', password: process.env.WP_APP_PASSWORD ?? '' })
 log(`WordPress ${WP_URL}${wp.authenticated ? ' (authenticated: drafts included)' : ' (public API: published content only)'}`)
 
-const dbSteps = [...steps].filter((s) => s !== 'files')
+const dbSteps = [...steps].filter((s) => s !== 'files' && s !== 'sizes')
 if (dbSteps.length) {
   const { default: config } = await import('../../src/payload.config')
   const payload = await getPayload({ config })
@@ -469,6 +473,16 @@ if (steps.has('files')) {
     workDir: WORK_DIR,
     local: args['local-r2'] === 'true',
     since: SINCE,
+  })
+}
+
+// Resized copies for the website (reads the local database, writes to R2).
+if (steps.has('sizes')) {
+  await generateSizes({
+    workDir: WORK_DIR,
+    concurrency: Number(args['file-concurrency'] ?? 12),
+    local: args['local-r2'] === 'true',
+    mediaUrl: (process.env.MEDIA_URL || 'https://files.agrinewsthai.com').replace(/\/$/, ''),
   })
 }
 

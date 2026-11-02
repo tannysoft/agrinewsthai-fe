@@ -55,6 +55,14 @@ pnpm --filter @agrinewsthai/cms migrate:db
 
 เนื้อหาเก็บเป็น Lexical (แก้ไขได้ใน editor) และสร้าง `contentHtml` อัตโนมัติทุกครั้งที่บันทึก เว็บอ่าน HTML นี้โดยตรง
 
+### รูปภาพ
+
+CMS สร้างรูปย่อเป็น WebP ตามขนาดที่หน้าเว็บใช้จริง (`apps/cms/src/lib/image-sizes.ts` — ต้องตรงกับ `apps/web/src/lib/image-sizes.ts`) เก็บข้างไฟล์ต้นฉบับใน R2 เช่น `2026/11/x.jpg` → `2026/11/x-320w.webp`, `-768w.webp`, `-1280w.webp`
+
+- อัปโหลดใหม่ใน CMS: สร้างให้อัตโนมัติด้วย Cloudflare Images binding
+- รูปเดิมที่ย้ายมา: `pnpm migrate:wp --steps=sizes` (ย่อด้วย sharp บนเครื่อง แล้วอัปโหลดเข้า R2)
+- หน้าเว็บใช้ `<img srcset>` เรียกไฟล์จาก files.agrinewsthai.com ตรง ๆ ไม่ผ่าน Next Image
+
 ## ย้ายข้อมูลจาก WordPress
 
 สคริปต์อยู่ที่ `apps/cms/scripts/migrate-wp` อ่านจาก WordPress REST API แล้วเขียนลง Payload โดยคง id เดิม
@@ -115,7 +123,8 @@ npx wrangler secret put CMS_PREVIEW_API_KEY       # API key ของผู้�
 ```bash
 cd apps/cms
 pnpm migrate:wp                 # ลง D1 local
-pnpm push:db                    # export → import เข้า D1 remote (ต้องเป็นฐานว่าง)
+pnpm deploy:database           # สร้างตารางใน D1 remote
+pnpm push:db                    # คัดลอกข้อมูลขึ้น D1 remote (ครั้งเดียว; แบ่งแถวยาวให้ไม่เกินลิมิต 100 KB ต่อคำสั่งของ D1)
 pnpm migrate:wp --steps=files   # ไฟล์สื่อเข้า R2
 ```
 

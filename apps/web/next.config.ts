@@ -1,26 +1,10 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
-/** Hosts serving CMS media: the public R2 domain and the CMS itself (local dev). */
-const mediaHosts = [process.env.MEDIA_URL, process.env.CMS_URL]
-  .filter((u): u is string => Boolean(u))
-  .map((u) => new URL(u))
-  .map((u) => ({ protocol: u.protocol.replace(":", "") as "http" | "https", hostname: u.hostname, port: u.port || undefined }));
-
 const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      ...mediaHosts,
-      { protocol: "https", hostname: "files.agrinewsthai.com" },
-      { protocol: "https", hostname: "cms.agrinewsthai.com" },
-      { protocol: "https", hostname: "www.agrinewsthai.com", pathname: "/wp-content/**" },
-      { protocol: "https", hostname: "agrinewsthai.com", pathname: "/wp-content/**" },
-      { protocol: "https", hostname: "secure.gravatar.com" },
-      { protocol: "https", hostname: "i0.wp.com" },
-      { protocol: "https", hostname: "i1.wp.com" },
-      { protocol: "https", hostname: "i2.wp.com" },
-    ],
-  },
+  // Images are plain <img> tags pointing at resized copies on the media
+  // domain (WordPress sizes, or the CMS's own — lib/image-sizes.ts).
+  images: { unoptimized: true },
   async headers() {
     // Preview hosts (SITE_NOINDEX=1) must not compete with www in search.
     if (process.env.SITE_NOINDEX !== "1") return [];

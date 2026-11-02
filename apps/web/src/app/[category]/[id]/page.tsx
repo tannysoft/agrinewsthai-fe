@@ -1,7 +1,7 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import { draftMode } from "next/headers";
 import Link from "next/link";
-import Image from "next/image";
+import { Img } from "@/components/Img";
 import type { Metadata } from "next";
 import {
   formatRelative,
@@ -212,9 +212,8 @@ export default async function PostPage({ params }: Props) {
           {img && (
             <figure className="mt-6">
               <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-field">
-                <Image
-                  src={img.src}
-                  alt={img.alt}
+                <Img
+                  img={img}
                   fill
                   priority
                   sizes="(min-width: 1400px) 880px, (min-width: 1024px) 66vw, 100vw"
@@ -286,7 +285,7 @@ export default async function PostPage({ params }: Props) {
                         <div className="relative aspect-[16/9] overflow-hidden rounded bg-field">
                           {(() => {
                             const t = getFeaturedImage(p, "medium");
-                            return t ? <Image src={t.src} alt={t.alt} fill sizes="96px" className="object-cover" /> : null;
+                            return t ? <Img img={t} fill sizes="96px" className="object-cover" /> : null;
                           })()}
                         </div>
                         <div className="min-w-0">

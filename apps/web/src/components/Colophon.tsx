@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { WPCategory } from "@/lib/wp";
 import { CROPS } from "@/lib/crops";
 import { TOPICS } from "@/lib/topics";
@@ -60,7 +59,8 @@ export function Colophon({ categories }: { categories: WPCategory[] }) {
     <footer className="bg-leaf-deep text-white/85">
       <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-14 md:py-16 grid gap-10 md:grid-cols-12">
         <div className="md:col-span-4">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/logo.svg"
             alt="เรื่องเล่าข่าวเกษตร"
             width={904}

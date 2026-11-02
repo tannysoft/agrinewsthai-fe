@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { Img } from "@/components/Img";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import {
@@ -314,9 +314,8 @@ function LeadStory({ post }: { post: WPPost }) {
       className="group relative block overflow-hidden rounded-lg bg-white/10 aspect-[4/3] sm:aspect-[16/10] lg:col-span-8 lg:aspect-auto lg:min-h-[460px]"
     >
       {img && (
-        <Image
-          src={img.src}
-          alt={img.alt}
+        <Img
+          img={img}
           fill
           priority
           sizes="(min-width: 1400px) 900px, (min-width: 1024px) 66vw, 100vw"

@@ -1,4 +1,5 @@
 import * as cms from "./payload";
+import { IMAGE_SIZES, RESIZABLE, sizeKey } from "./image-sizes";
 
 export const WP_BASE = "https://www.agrinewsthai.com";
 export const WP_API = `${WP_BASE}/wp-json/wp/v2`;
@@ -369,52 +370,62 @@ export function resolveMediaKey(key: string): string {
   return `${cms}/api/media/file/${filename}?prefix=${encodeURIComponent(decodeURIComponent(parts.join("/")))}`;
 }
 
-const CMS_MEDIA_HOSTS = [process.env.MEDIA_URL, process.env.CMS_URL]
-  .filter((u): u is string => Boolean(u))
-  .map((u) => new URL(u).host);
 
 /**
  * CMS media are full-size originals; serve body images through the Next.js
  * image optimizer (Cloudflare Images on Workers) at article-column widths.
  */
 function resizedSrc(img: string): string {
-  let src = img.match(/\ssrc=(["'])(.*?)\1/i)?.[2];
-  if (!src) return img;
+  const src = img.match(/\ssrc=(["'])(.*?)\1/i)?.[2];
   // CMS body HTML stores library images as `media:{prefix}/{filename}`.
-  if (src.startsWith("media:")) src = resolveMediaKey(src.slice(6));
-  let host = "";
-  try {
-    host = new URL(src).host;
-  } catch {
-    return img;
-  }
-  if (!CMS_MEDIA_HOSTS.includes(host)) return img;
-  const url = (w: number) => `/_next/image?url=${encodeURIComponent(src)}&amp;w=${w}&amp;q=75`;
+  if (!src?.startsWith("media:")) return img;
+  const key = src.slice(6);
+  const original = resolveMediaKey(key);
+  const mime = /\.png$/i.test(key) ? "image/png" : /\.(jpe?g)$/i.test(key) ? "image/jpeg" : /\.webp$/i.test(key) ? "image/webp" : "";
+  if (!RESIZABLE.test(mime)) return img.replace(src, original);
+  // The resized WebP copies the CMS keeps next to every image (lib/image-sizes.ts).
+  const copy = (w: number) => resolveMediaKey(sizeKey(key, w));
+  const srcset = Object.values(IMAGE_SIZES).map((w) => `${copy(w)} ${w}w`).join(", ");
   return img
     .replace(/\s(srcset|sizes)=(["']).*?\2/gi, "")
-    .replace(/\ssrc=(["'])(.*?)\1/i, ` src="${url(1200)}" srcset="${url(640)} 640w, ${url(828)} 828w, ${url(1200)} 1200w" sizes="(max-width: 800px) 100vw, 760px"`);
+    .replace(/\ssrc=(["'])(.*?)\1/i, ` src="${copy(IMAGE_SIZES.large)}" srcset="${srcset}" sizes="(max-width: 800px) 100vw, 760px"`);
 }
 
+/** Target widths for the size names pages ask for (CMS sizes: lib/image-sizes.ts). */
+const TARGET_WIDTH = { medium: 320, medium_large: 768, large: 1280, full: Infinity } as const;
+// WordPress crops these to fixed shapes; they'd distort in a srcset.
+const CROPPED = new Set(["thumbnail", "post-thumbnail"]);
+
+export type FeaturedImage = { src: string; srcSet?: string; width: number; height: number; alt: string };
+
+/**
+ * Cover image of a story: the copy closest to the requested size plus a
+ * srcset of every resized copy, for a plain <img> (no image optimizer).
+ */
 export function getFeaturedImage(
   post: WPPost,
-  size: "medium" | "medium_large" | "large" | "full" = "medium_large"
-): { src: string; width: number; height: number; alt: string } | null {
+  size: keyof typeof TARGET_WIDTH = "medium_large"
+): FeaturedImage | null {
   const media = post._embedded?.["wp:featuredmedia"]?.[0];
   if (!media?.source_url) return null;
-  const sized = media.media_details?.sizes?.[size];
-  const full = media.media_details?.sizes?.full;
   const alt =
     media.alt_text && !isFilenameAlt(media.alt_text) ? media.alt_text : stripHtml(post.title.rendered);
-  if (sized)
-    return { src: sized.source_url, width: sized.width, height: sized.height, alt };
-  if (full)
-    return { src: full.source_url, width: full.width, height: full.height, alt };
-  return {
-    src: media.source_url,
+  const original = {
+    source_url: media.source_url,
     width: media.media_details?.width ?? 1200,
     height: media.media_details?.height ?? 675,
-    alt,
   };
+  const copies = Object.entries(media.media_details?.sizes ?? {})
+    .filter(([name, c]) => !CROPPED.has(name) && name !== "full" && c?.source_url && c.width)
+    .map(([, c]) => c)
+    .sort((a, b) => a.width - b.width)
+    .filter((c, i, all) => i === 0 || c.width !== all[i - 1].width);
+  if (!copies.length) return { src: original.source_url, width: original.width, height: original.height, alt };
+
+  const target = TARGET_WIDTH[size];
+  const pick = copies.find((c) => c.width >= target) ?? copies[copies.length - 1];
+  const srcSet = copies.map((c) => `${c.source_url} ${c.width}w`).join(", ");
+  return { src: pick.source_url, srcSet, width: pick.width, height: pick.height, alt };
 }
 
 export function getPrimaryCategory(post: WPPost): WPTerm | null {

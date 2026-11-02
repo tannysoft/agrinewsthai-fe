@@ -1,13 +1,14 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff } from '../access'
+import { generateSizes, sizesAfterRead } from '../hooks/image-sizes'
 
 /**
  * Images and files (WordPress `attachment`). Stored in the R2 bucket
  * `agrinewsthai` (files.agrinewsthai.com) under `{yyyy}/{mm}/{filename}` —
  * the layout of wp-content/uploads, which the bucket already used for the
- * files offloaded from WordPress. Resized variants are produced on the
- * fly by Cloudflare Images on the website, so no sizes are generated here
- * (sharp isn't available on Workers).
+ * files offloaded from WordPress. WebP copies at the sizes the website
+ * renders are written next to each original (hooks/image-sizes.ts) —
+ * Payload's own imageSizes need sharp, which Workers don't have.
  */
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -34,11 +35,20 @@ export const Media: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [generateSizes],
   },
   fields: [
     { name: 'alt', label: 'ข้อความแทนภาพ (alt)', type: 'text' },
     { name: 'caption', label: 'คำบรรยายภาพ', type: 'textarea' },
     { name: 'credit', label: 'เครดิตภาพ', type: 'text' },
+    {
+      // URLs of the resized copies the website uses (see lib/image-sizes.ts).
+      name: 'sizes',
+      type: 'json',
+      virtual: true,
+      admin: { hidden: true },
+      hooks: { afterRead: [sizesAfterRead] },
+    },
     {
       name: 'wpId',
       label: 'WordPress attachment ID',

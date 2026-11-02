@@ -205,6 +205,7 @@ export interface Media {
   caption?: string | null;
   credit?: string | null;
   wpId?: number | null;
+  prefix?: string | null;
   _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -585,6 +586,7 @@ export interface MediaSelect<T extends boolean = true> {
   caption?: T;
   credit?: T;
   wpId?: T;
+  prefix?: T;
   _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;

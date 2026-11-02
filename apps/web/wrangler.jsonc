@@ -18,16 +18,13 @@
   // ],
   // workers.dev until cutover; then cms.agrinewsthai.com / www.agrinewsthai.com
   "vars": {
-    "CMS_SOURCE": "wordpress",
+    "CMS_SOURCE": "payload",
     "SITE_NOINDEX": "1",
     "CMS_URL": "https://cms.agrinewsthai.com",
     "MEDIA_URL": "https://files.agrinewsthai.com"
   },
   // Secrets (wrangler secret put …): REVALIDATE_SECRET and PREVIEW_SECRET (same
   // values as the CMS), CMS_PREVIEW_API_KEY (API key of a CMS user, for drafts).
-
-  // next/image resizing through Cloudflare Images.
-  "images": { "binding": "IMAGES" },
 
   // OpenNext cache (see open-next.config.ts)
   "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "agrinewsthai-web-cache" }],

@@ -27,6 +27,9 @@ const isCLI = process.argv.some((value) => realpath(value)?.endsWith(path.join('
 const isProduction = process.env.NODE_ENV === 'production'
 // Scripts (WordPress import) run in Node and reach D1/R2 through Wrangler.
 const isScript = process.env.PAYLOAD_SCRIPT === '1'
+// `next build` only needs the config, never the database; its parallel
+// workers would otherwise all start wrangler against the same local D1.
+const isBuild = process.env.NEXT_PHASE === 'phase-production-build'
 
 const createLog =
   (level: string, fn: typeof console.log) => (objOrMsg: object | string, msg?: string) => {
@@ -47,7 +50,9 @@ const cloudflareLogger = {
 
 /** D1/R2 bindings (exported for the import scripts). */
 export const cloudflare =
-  isCLI || isScript || !isProduction
+  isBuild
+    ? ({ env: {} } as unknown as CloudflareContext)
+    : isCLI || isScript || !isProduction
     ? await getCloudflareContextFromWrangler()
     : await getCloudflareContext({ async: true })
 
@@ -75,6 +80,8 @@ export default buildConfig({
   plugins: [
     r2Storage({
       bucket: cloudflare.env.R2 as never,
+      // Keep the per-file `prefix` (year/month folder) even without a collection prefix.
+      alwaysInsertFields: true,
       collections: {
         media: {
           // Serve files straight from the public R2 domain when it's configured.

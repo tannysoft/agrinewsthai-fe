@@ -18,7 +18,7 @@ import type { WordPress, WPMedia } from './wp'
  *  - `--local-r2` writes to the local .wrangler bucket instead (testing).
  * Progress: checked ids in .migrate/files-done.txt, failures in .migrate/files-failed.tsv.
  */
-type Bucket = {
+export type Bucket = {
   label: string
   exists: (key: string) => Promise<boolean>
   put: (key: string, body: ArrayBuffer, contentType: string) => Promise<void>
@@ -26,7 +26,7 @@ type Bucket = {
 
 const CACHE = 'public, max-age=31536000, immutable'
 
-async function openBucket(local: boolean): Promise<Bucket> {
+export async function openBucket(local: boolean): Promise<Bucket> {
   const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET } = process.env
   if (!local && R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET) {
     const { S3Client, PutObjectCommand, HeadObjectCommand } = await import('@aws-sdk/client-s3')

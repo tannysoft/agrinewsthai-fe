@@ -260,7 +260,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`caption\` text,
   	\`credit\` text,
   	\`wp_id\` numeric,
-  	\`prefix\` text DEFAULT 'uploads',
+  	\`prefix\` text DEFAULT '',
   	\`_objectkey\` text,
   	\`updated_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
   	\`created_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,

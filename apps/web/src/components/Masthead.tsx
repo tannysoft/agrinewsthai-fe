@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { WPCategory } from "@/lib/wp";
@@ -61,12 +60,13 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
       <div className="mx-auto max-w-[1400px] px-4 md:px-6">
         <div className="flex items-center gap-4 h-16 md:h-20">
           <Link href="/" className="shrink-0" aria-label="เรื่องเล่าข่าวเกษตร หน้าแรก">
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/logo.svg"
               alt="เรื่องเล่าข่าวเกษตร"
               width={904}
               height={311}
-              priority
+              fetchPriority="high"
               className="h-10 md:h-14 w-auto"
             />
           </Link>
@@ -124,7 +124,8 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
           >
             <div className="mx-auto max-w-[1400px] px-4 md:px-6 py-6 md:py-10">
               <div className="flex items-center justify-between gap-4">
-                <Image src="/logo.svg" alt="" width={904} height={311} className="h-10 md:h-12 w-auto" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.svg" alt="" width={904} height={311} className="h-10 md:h-12 w-auto" />
                 <button
                   type="button"
                   onClick={() => setOpen(false)}

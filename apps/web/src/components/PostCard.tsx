@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { Img } from "./Img";
 import {
   WPPost,
   formatRelative,
@@ -117,9 +117,8 @@ export function Thumb({
   return (
     <div className={`relative overflow-hidden rounded-md bg-field ${className}`}>
       {img && (
-        <Image
-          src={img.src}
-          alt={img.alt}
+        <Img
+          img={img}
           fill
           priority={priority}
           sizes={sizes}

@@ -19,6 +19,8 @@ type PMedia = {
   alt?: string | null;
   width?: number | null;
   height?: number | null;
+  /** Resized copies (CMS lib/image-sizes.ts); null for GIF/SVG. */
+  sizes?: Record<string, { url: string; width: number; height: number | null }> | null;
 };
 type PTerm = { id: number; name: string; slug: string; description?: string | null; postCount?: number | null; parent?: number | PTerm | null };
 type PUser = { id: number; name: string; slug: string; showByline?: boolean | null };
@@ -69,7 +71,8 @@ const LIST_SELECT = {
 };
 
 const POPULATE = {
-  media: { url: true, filename: true, alt: true, width: true, height: true },
+  // prefix + mimeType: the CMS builds `url` and `sizes` from them.
+  media: { url: true, filename: true, prefix: true, mimeType: true, alt: true, width: true, height: true, sizes: true },
   categories: { name: true, slug: true },
   tags: { name: true, slug: true },
   users: { name: true, slug: true, showByline: true },
@@ -102,7 +105,16 @@ function toMedia(m: PMedia): WPMedia {
     id: m.id,
     source_url: absoluteMediaUrl(m.url),
     alt_text: m.alt ?? "",
-    media_details: { width: m.width ?? undefined, height: m.height ?? undefined },
+    media_details: {
+      width: m.width ?? undefined,
+      height: m.height ?? undefined,
+      sizes: Object.fromEntries(
+        Object.entries(m.sizes ?? {}).map(([name, c]) => [
+          name,
+          { source_url: absoluteMediaUrl(c.url), width: c.width, height: c.height ?? Math.round(((m.height ?? 675) * c.width) / (m.width ?? 1200)) },
+        ])
+      ),
+    },
   };
 }
 
@@ -187,9 +199,9 @@ export async function findPosts(q: PostQuery) {
   const and: Where[] = [publishedNow()];
   const list = (v?: number | number[]) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
   if (list(q.categories).length) and.push({ categories: { in: list(q.categories) } });
-  // "Not in any of these categories": exclude posts by id via a sub-list is not
-  // available over REST, so filter on each excluded category separately.
-  for (const c of q.categoriesExclude ?? []) and.push({ categories: { not_equals: c } });
+  // Exclusion on a has-many field matches posts with *any other* category, so
+  // exclude by the (single) primary category instead.
+  if (q.categoriesExclude?.length) and.push({ primaryCategory: { not_in: q.categoriesExclude } });
   if (list(q.exclude).length) and.push({ id: { not_in: list(q.exclude) } });
   if (q.include?.length) and.push({ id: { in: q.include } });
   if (q.slug) and.push({ slug: { equals: safeDecode(q.slug) } });
