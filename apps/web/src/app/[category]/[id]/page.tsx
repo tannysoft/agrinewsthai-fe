@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: SITE_NAME,
       locale: "th_TH",
       publishedTime: rankMath?.articlePublishedTime || post.date_gmt + "Z",
-      modifiedTime: rankMath?.articleModifiedTime || post.modified,
+      modifiedTime: rankMath?.articleModifiedTime || (post.modified_gmt ? `${post.modified_gmt}Z` : undefined),
       authors: [getBylineName(post)],
       section: category?.name,
       tags,

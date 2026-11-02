@@ -51,7 +51,8 @@ export const Users: CollectionConfig = {
       required: true,
       defaultValue: 'author',
       saveToJWT: true,
-      access: { create: isAdminField, update: isAdminField },
+      // Roles are internal: hidden from the public API (bylines only need name/slug).
+      access: { read: ({ req }) => Boolean(req.user), create: isAdminField, update: isAdminField },
       options: [
         { label: 'ผู้ดูแลระบบ', value: 'admin' },
         { label: 'บรรณาธิการ', value: 'editor' },

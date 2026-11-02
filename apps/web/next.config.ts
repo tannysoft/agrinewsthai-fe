@@ -28,6 +28,21 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Old WordPress media URLs → the same files on the R2 media domain.
+      {
+        source: "/wp-content/uploads/:path*",
+        destination: "https://files.agrinewsthai.com/:path*",
+        permanent: true,
+      },
+      // WordPress shortlinks /?p={id} → the story (which then canonicalises its category).
+      {
+        source: "/",
+        has: [{ type: "query", key: "p", value: "(?<id>\\d+)" }],
+        destination: "/news/:id",
+        permanent: true,
+      },
+      // WordPress home pagination.
+      { source: "/page/:num(\\d+)", destination: "/news/page/:num", permanent: true },
       // Old duplicate of พืชเศรษฐกิจ (SEO audit, Oct 2026) — must precede the generic /category rule.
       { source: "/category/industrial-drop/:rest*", destination: "/economic-crops", permanent: true },
       { source: "/industrial-drop/:rest*", destination: "/economic-crops", permanent: true },

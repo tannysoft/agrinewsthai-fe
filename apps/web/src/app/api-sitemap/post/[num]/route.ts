@@ -14,6 +14,9 @@ export const revalidate = 1800;
 
 type MinPost = { id: number; modified: string; categories?: number[] };
 
+/** UTC with a zone; WordPress `modified` is Bangkok wall time. */
+const utcModified = (p: { modified: string; modified_gmt?: string }) => (p.modified_gmt ? `${p.modified_gmt}Z` : p.modified);
+
 /**
  * Fetch a single 200-post chunk for sitemap page N (1-indexed).
  * WP REST caps per_page at 100, so each 200-chunk requires two sub-fetches.
@@ -29,8 +32,8 @@ async function fetchChunk(pageNum: number): Promise<MinPost[]> {
 
 async function fetchSlice(offset: number, perPage: number): Promise<MinPost[]> {
   try {
-    const { data } = await getPosts({ offset, perPage, orderby: "date", order: "desc", embed: false, fields: ["id", "modified", "categories"] });
-    return data.map((p) => ({ id: p.id, modified: p.modified, categories: p.categories }));
+    const { data } = await getPosts({ offset, perPage, orderby: "date", order: "desc", embed: false, fields: ["id", "modified", "modified_gmt", "categories"] });
+    return data.map((p) => ({ id: p.id, modified: utcModified(p), categories: p.categories }));
   } catch {
     return [];
   }

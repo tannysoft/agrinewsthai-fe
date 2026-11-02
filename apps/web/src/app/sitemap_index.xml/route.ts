@@ -11,8 +11,9 @@ export const revalidate = 3600;
 
 async function latestPostModified(): Promise<string | null> {
   try {
-    const { data } = await getPosts({ perPage: 1, orderby: "modified", order: "desc", embed: false, fields: ["modified"] });
-    return data[0]?.modified ?? null;
+    const { data } = await getPosts({ perPage: 1, orderby: "modified", order: "desc", embed: false, fields: ["modified", "modified_gmt"] });
+    const p = data[0];
+    return p ? (p.modified_gmt ? `${p.modified_gmt}Z` : p.modified) : null;
   } catch {
     return null;
   }

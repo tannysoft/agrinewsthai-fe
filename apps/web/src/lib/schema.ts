@@ -118,8 +118,9 @@ export function newsArticleSchema(
     headline: title.slice(0, 110),
     alternativeHeadline: title,
     description: description.slice(0, 250),
-    datePublished: rankMath?.articlePublishedTime || post.date,
-    dateModified: rankMath?.articleModifiedTime || post.modified,
+    // WordPress-shaped dates: `date`/`modified` are Bangkok wall time without a zone.
+    datePublished: rankMath?.articlePublishedTime || `${post.date_gmt}Z`,
+    dateModified: rankMath?.articleModifiedTime || (post.modified_gmt ? `${post.modified_gmt}Z` : `${post.date_gmt}Z`),
     inLanguage: "th-TH",
     articleSection: category?.name,
     keywords: tags.length ? tags.join(", ") : undefined,

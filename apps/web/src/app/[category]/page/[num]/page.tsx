@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getCategoryBySlug, getPosts } from "@/lib/wp";
 import { categoryMetadata } from "@/lib/category-meta";
@@ -24,7 +24,7 @@ export default async function CategoryPaginatedPage({ params }: Props) {
   const page = Number(num);
 
   if (!Number.isFinite(page) || page < 1) notFound();
-  if (page === 1) redirect(`/${category}`);
+  if (page === 1) permanentRedirect(`/${category}`);
 
   const cat = await getCategoryBySlug(category);
   if (!cat) notFound();

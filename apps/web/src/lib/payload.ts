@@ -216,35 +216,38 @@ export async function findPosts(q: PostQuery) {
   if (q.search) and.push({ or: [{ title: { like: q.search } }, { excerpt: { like: q.search } }] });
 
   const perPage = q.perPage ?? 10;
-  // REST has no offset: use it as a page when aligned, else over-fetch and slice.
-  let page = q.page ?? 1;
-  let limit = perPage;
-  let skip = 0;
-  if (q.offset) {
-    if (q.offset % perPage === 0) page = q.offset / perPage + 1;
-    else {
-      page = 1;
-      limit = q.offset + perPage;
-      skip = q.offset;
-    }
-  }
-
   const sort = `${q.order === "asc" ? "" : "-"}${SORT[q.orderby ?? "date"]}`;
   const tags = q.tagId ? ["posts", `tag-posts-${q.tagId}`] : ["posts"];
-  const res = await cms<FindResult<PPost>>(
-    "/posts",
-    {
-      where: { and },
-      limit,
-      page,
-      sort,
-      depth: q.minimal ? 0 : 1,
-      select: q.minimal ? { categories: true, primaryCategory: true, title: true, publishedAt: true, updatedAt: true } : LIST_SELECT,
-      ...(q.minimal ? {} : { populate: POPULATE }),
-    },
-    tags
-  );
-  const docs = (res?.docs ?? []).slice(skip);
+  const fetchPage = (page: number) =>
+    cms<FindResult<PPost>>(
+      "/posts",
+      {
+        where: { and },
+        limit: perPage,
+        page,
+        sort,
+        depth: q.minimal ? 0 : 1,
+        select: q.minimal ? { categories: true, primaryCategory: true, title: true, publishedAt: true, updatedAt: true } : LIST_SELECT,
+        ...(q.minimal ? {} : { populate: POPULATE }),
+      },
+      tags
+    );
+
+  // REST has no offset. Read the (at most two) pages of `perPage` that cover
+  // [offset, offset + perPage) — never one big page: the CMS caps queries
+  // filtered by a relation at 100 rows (D1's bound-parameter limit).
+  let res: FindResult<PPost> | null;
+  let docs: PPost[];
+  if (q.offset) {
+    const first = Math.floor(q.offset / perPage) + 1;
+    const skip = q.offset % perPage;
+    const pages = await Promise.all(skip ? [fetchPage(first), fetchPage(first + 1)] : [fetchPage(first)]);
+    res = pages[0];
+    docs = pages.flatMap((r) => r?.docs ?? []).slice(skip, skip + perPage);
+  } else {
+    res = await fetchPage(q.page ?? 1);
+    docs = res?.docs ?? [];
+  }
   return {
     data: docs.map((d) => (q.minimal ? toMinimalPost(d) : toWPPost(d))),
     total: res?.totalDocs ?? 0,

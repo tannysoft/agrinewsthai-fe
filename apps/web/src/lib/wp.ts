@@ -321,7 +321,9 @@ export function stripHtml(html: string): string {
  * "[…]", and collapses &nbsp; and whitespace.
  */
 export function getExcerpt(post: WPPost, max = 200): string {
-  const text = stripHtml(post.excerpt?.rendered ?? "")
+  // Some WordPress excerpts were cut mid-entity ("…&#8", "&nbs"): drop the stub.
+  const raw = (post.excerpt?.rendered ?? "").replace(/&(?:amp;)?#?[a-z0-9]{0,8}(?=\s*(?:\[…\]|\[&hellip;\]|…|<\/p>|$))/gi, "");
+  const text = stripHtml(raw)
     .replace(/^(?:\s*(?:Facebook|X|Twitter|LINE|Line)\s*)+/, "")
     .replace(/\s*…\s*$/, "")
     .replace(/\u00a0/g, " ")

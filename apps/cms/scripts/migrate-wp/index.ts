@@ -386,6 +386,8 @@ async function migrateContent(
       }
       if (exists) {
         await payload.update({ collection: kind, id: p.id, data: data as never, overrideAccess: true, context: ctx })
+        // Keep WordPress's modified date: re-importing is not an editorial change.
+        await payload.db.updateOne({ collection: kind, id: p.id, data: { updatedAt: gmt(p.modified_gmt) } })
         updated++
       } else {
         await payload.create({ collection: kind, data: { id: p.id, ...data } as never, overrideAccess: true, context: ctx })

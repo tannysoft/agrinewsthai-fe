@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getTagBySlug, getPostsByTag, stripHtml } from "@/lib/wp";
 import { PostCard } from "@/components/PostCard";
@@ -25,7 +25,7 @@ export default async function TagPaginatedPage({ params }: Props) {
   const { slug, num } = await params;
   const page = Number(num);
   if (!Number.isFinite(page) || page < 1) notFound();
-  if (page === 1) redirect(`/tag/${slug}`);
+  if (page === 1) permanentRedirect(`/tag/${slug}`);
 
   const tag = await getTagBySlug(slug);
   if (!tag) notFound();

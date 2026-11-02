@@ -46,7 +46,8 @@ export async function GET(
   const now = new Date();
   const xml = urlSetXml(
     tags.map((t) => ({
-      loc: `${SITE_ORIGIN}/tag/${t.slug}`,
+      // WordPress slugs arrive percent-encoded; CMS slugs are Thai text.
+      loc: `${SITE_ORIGIN}/tag/${/%[0-9a-f]{2}/i.test(t.slug) ? t.slug : encodeURIComponent(t.slug)}`,
       lastmod: now,
       changefreq: "weekly",
       priority: 0.5,
