@@ -51,7 +51,9 @@ const IDS = args.ids
 const UPDATE = args.update === 'true' || Boolean(SINCE) || Boolean(IDS)
 const CONCURRENCY = Number(args.concurrency ?? 6)
 const RANKMATH = args.rankmath !== 'false'
-const KEEP_VERSIONS = args['keep-versions'] === 'true'
+// The admin lists drafts-enabled collections from their versions table, so
+// every story needs one; --drop-versions only for throwaway test imports.
+const KEEP_VERSIONS = args['drop-versions'] !== 'true'
 const WP_URL = args.wp ?? process.env.WP_URL ?? 'https://www.agrinewsthai.com'
 
 const WORK_DIR = path.resolve(import.meta.dirname, '../../.migrate')
@@ -423,8 +425,8 @@ async function migrateContent(
   report.end()
 
   if (!KEEP_VERSIONS && created) {
-    // Each create also wrote a version row with a full copy of the story;
-    // imported stories have no edit history worth keeping, so drop them.
+    // --drop-versions: remove the version rows the import wrote. The admin
+    // list will then be empty for those stories (it reads versions).
     const versions = kind === 'posts' ? '_posts_v' : '_pages_v'
     await payload.db.drizzle.run(
       sql.raw(`DELETE FROM ${versions} WHERE parent_id IN (SELECT id FROM ${kind} WHERE wp_id IS NOT NULL)

@@ -3,7 +3,14 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { IMAGE_SIZES, RESIZABLE, sizeKey } from '../lib/image-sizes'
 import { mediaFileURL } from '../lib/env'
 
-type MediaDoc = { filename?: string | null; prefix?: string | null; mimeType?: string | null; width?: number | null; height?: number | null }
+type MediaDoc = {
+  filename?: string | null
+  prefix?: string | null
+  mimeType?: string | null
+  width?: number | null
+  height?: number | null
+  sizesReady?: boolean | null
+}
 
 const storageKey = (doc: MediaDoc) => [doc.prefix, doc.filename].filter(Boolean).join('/')
 
@@ -18,7 +25,7 @@ const mimeOf = (doc: MediaDoc) =>
 /** Virtual `sizes`: URLs of the resized copies (null for GIF/SVG/PDF…). */
 export const sizesAfterRead: FieldHook = ({ data }) => {
   const doc = data as MediaDoc | undefined
-  if (!doc?.filename || !RESIZABLE.test(mimeOf(doc))) return null
+  if (!doc?.filename || !doc.sizesReady || !RESIZABLE.test(mimeOf(doc))) return null
   const key = storageKey(doc)
   return Object.fromEntries(
     Object.entries(IMAGE_SIZES).map(([name, width]) => {
@@ -48,6 +55,7 @@ type R2Like = {
 export const generateSizes: CollectionAfterChangeHook = async ({ doc, previousDoc, operation, req, context }) => {
   if (context.skipSizes) return doc
   const d = doc as MediaDoc
+  if (d.sizesReady && operation !== 'create' && previousDoc?.filename === d.filename) return doc
   const changedFile = operation === 'create' || previousDoc?.filename !== d.filename || previousDoc?.prefix !== d.prefix
   if (!changedFile || !d.filename || !RESIZABLE.test(mimeOf(d))) return doc
   try {
@@ -68,6 +76,13 @@ export const generateSizes: CollectionAfterChangeHook = async ({ doc, previousDo
         httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
       })
     }
+    await req.payload.update({
+      collection: 'media',
+      id: doc.id,
+      data: { sizesReady: true },
+      context: { skipSizes: true },
+      req,
+    })
   } catch (err) {
     req.payload.logger.warn(`image sizes for media ${doc.id}: ${(err as Error).message}`)
   }

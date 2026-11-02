@@ -42,6 +42,14 @@ export const Media: CollectionConfig = {
     { name: 'caption', label: 'คำบรรยายภาพ', type: 'textarea' },
     { name: 'credit', label: 'เครดิตภาพ', type: 'text' },
     {
+      // True once the resized copies exist in R2 (upload hook or the backfill);
+      // until then `sizes` is null and the website shows the original.
+      name: 'sizesReady',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { hidden: true },
+    },
+    {
       // URLs of the resized copies the website uses (see lib/image-sizes.ts).
       name: 'sizes',
       type: 'json',

@@ -72,7 +72,7 @@ const LIST_SELECT = {
 
 const POPULATE = {
   // prefix + mimeType: the CMS builds `url` and `sizes` from them.
-  media: { url: true, filename: true, prefix: true, mimeType: true, alt: true, width: true, height: true, sizes: true },
+  media: { url: true, filename: true, prefix: true, mimeType: true, alt: true, width: true, height: true, sizes: true, sizesReady: true },
   categories: { name: true, slug: true },
   tags: { name: true, slug: true },
   users: { name: true, slug: true, showByline: true },

@@ -204,6 +204,16 @@ export interface Media {
   alt?: string | null;
   caption?: string | null;
   credit?: string | null;
+  sizesReady?: boolean | null;
+  sizes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   wpId?: number | null;
   prefix?: string | null;
   _objectKey?: string | null;
@@ -585,6 +595,8 @@ export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
   credit?: T;
+  sizesReady?: T;
+  sizes?: T;
   wpId?: T;
   prefix?: T;
   _objectKey?: T;

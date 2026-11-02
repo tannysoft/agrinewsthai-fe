@@ -77,7 +77,7 @@ pnpm migrate:wp --steps=files            # คัดลอกไฟล์สื�
 ```
 
 - รันซ้ำได้ ข้ามรายการที่มีแล้ว และจำหน้าที่ทำถึงไว้ใน `.migrate/state.json` (`--restart` เพื่อเริ่มใหม่)
-- ตัวเลือก: `--update` เขียนทับของเดิม, `--concurrency=6`, `--rankmath=false` ข้ามการดึง SEO จาก Rank Math, `--keep-versions`
+- ตัวเลือก: `--update` เขียนทับของเดิม, `--ids=1,2,3` ย้ายเฉพาะบางเรื่อง, `--concurrency=6`, `--rankmath=false` ข้ามการดึง SEO จาก Rank Math
 - ใส่ `WP_USER` + `WP_APP_PASSWORD` (Application Password ของ WordPress) ใน `.env` เพื่อดึงฉบับร่าง/บทความส่วนตัว และอีเมลผู้ใช้ด้วย ถ้าไม่ใส่จะได้เฉพาะที่เผยแพร่แล้ว
 - รหัสผ่านชั่วคราวของผู้ใช้ที่ย้ายมาอยู่ใน `.migrate/credentials.tsv`
 - ภาพที่หาในคลังสื่อไม่เจอ และบทความที่ย้ายไม่สำเร็จ จะถูกบันทึกใน `.migrate/*-warnings.log`

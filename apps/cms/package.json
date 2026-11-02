@@ -21,7 +21,8 @@
     "deploy:database": "cross-env NODE_ENV=production PAYLOAD_SECRET=ignore payload migrate && wrangler d1 execute agrinewsthai-cms --command 'PRAGMA optimize' --remote",
     "deploy:app": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "push:db": "bash scripts/push-db.sh"
+    "push:db": "bash scripts/push-db.sh",
+    "sizes:mark": "bash scripts/mark-sizes-ready.sh"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.15",

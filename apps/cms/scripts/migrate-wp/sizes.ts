@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import { execSync } from 'node:child_process'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import sharp from 'sharp'
@@ -71,4 +72,6 @@ export async function generateSizes(opts: { workDir: string; concurrency: number
   doneOut.end()
   failOut.end()
   console.log(`sizes done: ${n} resized, ${failed} failed`)
+  // Let the CMS hand out the new URLs (media.sizesReady).
+  if (!opts.local) execSync('bash scripts/mark-sizes-ready.sh', { stdio: 'inherit', cwd: path.resolve(opts.workDir, '..') })
 }

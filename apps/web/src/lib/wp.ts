@@ -388,7 +388,10 @@ function resizedSrc(img: string): string {
   const srcset = Object.values(IMAGE_SIZES).map((w) => `${copy(w)} ${w}w`).join(", ");
   // WebP copies for current browsers; the original JPG/PNG for the rest.
   const tag = img.replace(/\s(srcset|sizes)=(["']).*?\2/gi, "").replace(src, original);
-  return `<picture><source type="image/webp" srcset="${srcset}" sizes="(max-width: 800px) 100vw, 760px" />${tag}</picture>`;
+  // If a copy is missing (not generated yet), drop the <source> so the
+  // browser falls back to the original.
+  const fallback = ` onerror="var s=this.parentNode&&this.parentNode.querySelector('source');if(s){s.remove()}else{this.onerror=null}"`;
+  return `<picture><source type="image/webp" srcset="${srcset}" sizes="(max-width: 800px) 100vw, 760px" />${tag.replace(/<img\b/i, `<img${fallback}`)}</picture>`;
 }
 
 /** Target widths for the size names pages ask for (CMS sizes: lib/image-sizes.ts). */
