@@ -13,3 +13,16 @@ textarea,
 select {
   font-family: var(--font-body);
 }
+
+/* Posts list: title and cover link to the story, underline only on hover. */
+.list-title-link,
+.list-cover-link {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: none;
+}
+.list-title-link:hover,
+.list-title-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

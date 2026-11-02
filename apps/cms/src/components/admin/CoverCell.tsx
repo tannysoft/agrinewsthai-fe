@@ -20,7 +20,7 @@ export async function CoverCell(props: DefaultServerCellComponentProps) {
     : null
   const src = media?.sizes?.thumbnail?.url ?? media?.url
   return (
-    <a href={editURL(props)} style={{ display: 'block', width: 96 }}>
+    <a href={editURL(props)} className="list-cover-link" style={{ display: 'block', width: 96 }}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={media?.alt ?? ''} loading="lazy" style={{ ...box, objectFit: 'cover' }} />
@@ -34,7 +34,7 @@ export async function CoverCell(props: DefaultServerCellComponentProps) {
 /** Story title linking to the edit view, whichever column it's in. */
 export function TitleCell(props: DefaultServerCellComponentProps) {
   return (
-    <a href={editURL(props)} style={{ fontWeight: 500, color: 'inherit' }}>
+    <a href={editURL(props)} className="list-title-link">
       {String(props.cellData ?? '') || '(ไม่มีหัวข้อ)'}
     </a>
   )
