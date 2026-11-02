@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agrinewsthai-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  // Preview of the new site. Cutover: replace with the live domains below.
+  "routes": [{ "pattern": "new.agrinewsthai.com", "custom_domain": true }],
+  // "routes": [
+  //   { "pattern": "www.agrinewsthai.com", "custom_domain": true },
+  //   { "pattern": "agrinewsthai.com", "custom_domain": true }
+  // ],
+  // workers.dev until cutover; then cms.agrinewsthai.com / www.agrinewsthai.com
+  "vars": {
+    "CMS_SOURCE": "payload",
+    "SITE_NOINDEX": "1",
+    "CMS_URL": "https://cms.agrinewsthai.com",
+    "MEDIA_URL": "https://files.agrinewsthai.com"
+  },
+  // Secrets (wrangler secret put …): REVALIDATE_SECRET and PREVIEW_SECRET (same
+  // values as the CMS), CMS_PREVIEW_API_KEY (API key of a CMS user, for drafts).
+
+  // OpenNext cache (see open-next.config.ts)
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "agrinewsthai-web-cache" }],
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "agrinewsthai-web-tags",
+      "database_id": "fecf9a1a-dbf7-417c-8d04-b2ef29442104"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "agrinewsthai-web" }]
+}

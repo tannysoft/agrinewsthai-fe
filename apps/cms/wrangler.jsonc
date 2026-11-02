@@ -1,0 +1,62 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agrinewsthai-cms",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  // `wrangler d1 create agrinewsthai-cms` → paste the id here
+  "d1_databases": [
+    {
+      "binding": "D1",
+      "database_name": "agrinewsthai-cms",
+      "database_id": "f4db2ee0-5971-43a1-8a76-54ceb64aca40"
+    }
+  ],
+  // Existing bucket (files offloaded from WordPress), public at files.agrinewsthai.com
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "agrinewsthai"
+    }
+  ],
+  // workers.dev until cutover; then cms.agrinewsthai.com / www.agrinewsthai.com
+  // Forgot-password mail (lib/email.ts). Domain onboarded with
+  // `wrangler email sending enable notify.agrinewsthai.com`.
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["no-reply@notify.agrinewsthai.com"] }],
+  // Resizes uploads into the sizes the website uses (hooks/image-sizes.ts)
+  "images": { "binding": "IMAGES" },
+  "vars": {
+    "CMS_URL": "https://cms.agrinewsthai.com",
+    "WEB_URL": "https://new.agrinewsthai.com",
+    "MEDIA_URL": "https://files.agrinewsthai.com"
+  },
+  // Secrets (wrangler secret put …): PAYLOAD_SECRET, REVALIDATE_SECRET, PREVIEW_SECRET
+  "routes": [{ "pattern": "cms.agrinewsthai.com", "custom_domain": true }],
+  // Used by scripts and `payload migrate` on your machine to reach the real
+  // D1/R2 (PAYLOAD_REMOTE=1, or NODE_ENV=production for the payload CLI).
+  // Keep ids in sync with the top-level bindings.
+  "env": {
+    "remote": {
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_name": "agrinewsthai-cms",
+          "database_id": "f4db2ee0-5971-43a1-8a76-54ceb64aca40",
+          "remote": true
+        }
+      ],
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "agrinewsthai", "remote": true }]
+    },
+    // Only the real media bucket: `migrate:wp --steps=files` checks/uploads
+    // files there while the database stays local.
+    "files": {
+      "r2_buckets": [{ "binding": "R2", "bucket_name": "agrinewsthai", "remote": true }]
+    }
+  }
+}
