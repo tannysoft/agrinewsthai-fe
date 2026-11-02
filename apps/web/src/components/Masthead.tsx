@@ -92,7 +92,7 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
         </div>
       </div>
 
-      <nav aria-label="หมวดหมู่หลัก" className="border-t border-line">
+      <nav aria-label="หมวดหมู่หลัก" className="border-t border-line font-heading">
         <div className="mx-auto max-w-[1400px] px-4 md:px-6">
           <ul className="scroll-row flex items-center gap-1 overflow-x-auto -mx-1">
             <li className="shrink-0">
@@ -162,7 +162,7 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
               <div className="mt-10 grid gap-8 md:grid-cols-[1fr_2fr]">
                 <div>
                   <h2 className="text-sm font-semibold text-ink-3">เมนู</h2>
-                  <ul className="mt-3 space-y-2.5 text-lg">
+                  <ul className="mt-3 space-y-2.5 text-lg font-heading">
                     <li><Link href="/prices" className="hover:text-leaf">ราคาสินค้าเกษตร</Link></li>
                     <li><Link href="/tags" className="hover:text-leaf">แท็กทั้งหมด</Link></li>
                     <li><Link href="/about" className="hover:text-leaf">เกี่ยวกับเรา</Link></li>
@@ -171,7 +171,7 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
                 </div>
                 <div>
                   <h2 className="text-sm font-semibold text-ink-3">หมวดหมู่</h2>
-                  <ul className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5 text-lg">
+                  <ul className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5 text-lg font-heading">
                     {categories.slice(0, 15).map((c) => (
                       <li key={c.id}>
                         <Link href={`/${c.slug}`} className="hover:text-leaf">

@@ -18,7 +18,7 @@
   --color-ink-3: #78826d;
 
   /* Google Sans throughout; headings differ by weight and size */
-  --font-heading: var(--font-google-sans), "Google Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-noto-sans-thai), "Noto Sans Thai", var(--font-google-sans), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-google-sans), "Google Sans", ui-sans-serif, system-ui, sans-serif;
 }
 

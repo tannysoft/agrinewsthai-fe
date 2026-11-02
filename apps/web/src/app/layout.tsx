@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Google_Sans } from "next/font/google";
+import { Google_Sans, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import { Masthead } from "@/components/Masthead";
 import { Colophon } from "@/components/Colophon";
@@ -12,6 +12,14 @@ const googleSans = Google_Sans({
   variable: "--font-google-sans",
   subsets: ["latin", "thai"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+// Headings and the navigation menu.
+const notoSansThai = Noto_Sans_Thai({
+  variable: "--font-noto-sans-thai",
+  subsets: ["latin", "thai"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
 
@@ -69,7 +77,7 @@ export default async function RootLayout({
   return (
     <html
       lang="th"
-      className={`${googleSans.variable} antialiased`}
+      className={`${googleSans.variable} ${notoSansThai.variable} antialiased`}
     >
       <body className="flex flex-col min-h-screen">
         <a
