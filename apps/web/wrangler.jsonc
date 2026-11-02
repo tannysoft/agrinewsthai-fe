@@ -8,6 +8,7 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "workers_dev": true,
   "observability": { "enabled": true },
   // Cutover: uncomment to serve the live domain from this Worker. Until then
   // the site runs at agrinewsthai-web.<account>.workers.dev.
@@ -15,8 +16,9 @@
   //   { "pattern": "www.agrinewsthai.com", "custom_domain": true },
   //   { "pattern": "agrinewsthai.com", "custom_domain": true }
   // ],
+  // workers.dev until cutover; then cms.agrinewsthai.com / www.agrinewsthai.com
   "vars": {
-    "CMS_SOURCE": "payload",
+    "CMS_SOURCE": "wordpress",
     "CMS_URL": "https://cms.agrinewsthai.com",
     "MEDIA_URL": "https://files.agrinewsthai.com"
   },
@@ -32,7 +34,7 @@
     {
       "binding": "NEXT_TAG_CACHE_D1",
       "database_name": "agrinewsthai-web-tags",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "fecf9a1a-dbf7-417c-8d04-b2ef29442104"
     }
   ],
   "durable_objects": {

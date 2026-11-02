@@ -23,7 +23,7 @@ import { getPayload, type Payload } from 'payload'
 import { editorConfigFactory } from '@payloadcms/richtext-lexical'
 import { sql } from '@payloadcms/db-d1-sqlite'
 import { WordPress, type WPMedia, type WPPost, type WPTerm, type WPUser } from './wp'
-import { htmlToLexical, type MediaIndex } from './html-to-lexical'
+import { htmlToLexical, resolveMediaUrl, type MediaIndex } from './html-to-lexical'
 import { cleanExcerpt, decodeEntities, decodeSlug, gmt, looksLikeRealName, stripHtml } from './text'
 import { copyFiles } from './files'
 import { lexicalToHTML, type MediaLite } from '../../src/lib/lexical-html'
@@ -256,6 +256,13 @@ async function loadMediaIndex(payload: Payload): Promise<MediaIndex> {
   return { byId, byPath }
 }
 
+const normTitle = (t: string) => t.replace(/[“”„"]/g, '"').replace(/[‘’']/g, "'").replace(/\s+/g, ' ').trim()
+function customTitle(metaTitle: string | undefined, title: string) {
+  if (!metaTitle) return undefined
+  const bare = metaTitle.replace(/\s*[»|–-]\s*เรื่องเล่าข่าวเกษตร\s*$/, '').trim()
+  return normTitle(bare) === normTitle(title) ? undefined : bare
+}
+
 /** Rank Math values from its headless endpoint; only what differs from the defaults. */
 async function rankMath(wp: WordPress, link: string, title: string) {
   if (!RANKMATH) return {}
@@ -274,7 +281,8 @@ async function rankMath(wp: WordPress, link: string, title: string) {
     const canonical = pick(/<link rel="canonical" href="([^"]*)"/)
     const ogImage = pick(/<meta property="og:image" content="([^"]*)"/)
     return {
-      title: metaTitle && !metaTitle.startsWith(title) ? metaTitle : undefined,
+      // Only a custom SEO title, without the " » site name" suffix Rank Math adds.
+      title: customTitle(metaTitle, title),
       description,
       noindex: /noindex/.test(robots),
       nofollow: /nofollow/.test(robots),
@@ -284,6 +292,26 @@ async function rankMath(wp: WordPress, link: string, title: string) {
   } catch {
     return {}
   }
+}
+
+/**
+ * WordPress sometimes has several attachment records for one file; only the
+ * first was imported. Map a duplicate id to the imported record by its path.
+ */
+const featuredCache = new Map<number, number | undefined>()
+async function resolveFeatured(wp: WordPress, id: number, media: MediaIndex): Promise<number | undefined> {
+  if (!id) return undefined
+  if (media.byId.has(id)) return id
+  if (featuredCache.has(id)) return featuredCache.get(id)
+  let found: number | undefined
+  try {
+    const { data } = await wp.json<WPMedia>(`/media/${id}`, { _fields: 'id,source_url,media_details' })
+    found = resolveMediaUrl(data.source_url, media) ?? undefined
+  } catch {
+    found = undefined
+  }
+  featuredCache.set(id, found)
+  return found
 }
 
 const WP_STATUS: Record<string, 'published' | 'draft'> = { publish: 'published', future: 'published', draft: 'draft', pending: 'draft', private: 'draft' }
@@ -321,7 +349,7 @@ async function migrateContent(
       warnings.forEach((w) => report.write(`${p.id}\t${w}\n`))
       const lookup = new Map<number, MediaLite>(mediaIds.map((id) => [id, media.byId.get(id)!]))
       const seo = await rankMath(wp, p.link, title)
-      const featured = p.featured_media && media.byId.has(p.featured_media) ? p.featured_media : undefined
+      const featured = await resolveFeatured(wp, p.featured_media, media)
       const categories = (p.categories ?? []).filter((c) => cats.has(c))
       const primary = categories.find((c) => c !== 13) ?? categories[0]
       const excerpt = cleanExcerpt(p.excerpt?.raw || p.excerpt?.rendered || '')

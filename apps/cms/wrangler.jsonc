@@ -8,13 +8,14 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "workers_dev": true,
   "observability": { "enabled": true },
   // `wrangler d1 create agrinewsthai-cms` → paste the id here
   "d1_databases": [
     {
       "binding": "D1",
       "database_name": "agrinewsthai-cms",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "f4db2ee0-5971-43a1-8a76-54ceb64aca40"
     }
   ],
   // Existing bucket (files offloaded from WordPress), public at files.agrinewsthai.com
@@ -24,14 +25,14 @@
       "bucket_name": "agrinewsthai"
     }
   ],
+  // workers.dev until cutover; then cms.agrinewsthai.com / www.agrinewsthai.com
   "vars": {
     "CMS_URL": "https://cms.agrinewsthai.com",
-    "WEB_URL": "https://www.agrinewsthai.com",
+    "WEB_URL": "https://agrinewsthai-web.tannysoft.workers.dev",
     "MEDIA_URL": "https://files.agrinewsthai.com"
   },
   // Secrets (wrangler secret put …): PAYLOAD_SECRET, REVALIDATE_SECRET, PREVIEW_SECRET
-  // Uncomment once the agrinewsthai.com zone is on Cloudflare:
-  // "routes": [{ "pattern": "cms.agrinewsthai.com", "custom_domain": true }],
+  "routes": [{ "pattern": "cms.agrinewsthai.com", "custom_domain": true }],
   // Used by scripts and `payload migrate` on your machine to reach the real
   // D1/R2 (PAYLOAD_REMOTE=1, or NODE_ENV=production for the payload CLI).
   // Keep ids in sync with the top-level bindings.
@@ -41,7 +42,7 @@
         {
           "binding": "D1",
           "database_name": "agrinewsthai-cms",
-          "database_id": "00000000-0000-0000-0000-000000000000",
+          "database_id": "f4db2ee0-5971-43a1-8a76-54ceb64aca40",
           "remote": true
         }
       ],
