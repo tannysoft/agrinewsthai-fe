@@ -28,7 +28,7 @@
   // workers.dev until cutover; then cms.agrinewsthai.com / www.agrinewsthai.com
   "vars": {
     "CMS_URL": "https://cms.agrinewsthai.com",
-    "WEB_URL": "https://agrinewsthai-web.tannysoft.workers.dev",
+    "WEB_URL": "https://new.agrinewsthai.com",
     "MEDIA_URL": "https://files.agrinewsthai.com"
   },
   // Secrets (wrangler secret put …): PAYLOAD_SECRET, REVALIDATE_SECRET, PREVIEW_SECRET

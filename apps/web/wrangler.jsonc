@@ -10,8 +10,8 @@
   },
   "workers_dev": true,
   "observability": { "enabled": true },
-  // Cutover: uncomment to serve the live domain from this Worker. Until then
-  // the site runs at agrinewsthai-web.<account>.workers.dev.
+  // Preview of the new site. Cutover: replace with the live domains below.
+  "routes": [{ "pattern": "new.agrinewsthai.com", "custom_domain": true }],
   // "routes": [
   //   { "pattern": "www.agrinewsthai.com", "custom_domain": true },
   //   { "pattern": "agrinewsthai.com", "custom_domain": true }
@@ -19,6 +19,7 @@
   // workers.dev until cutover; then cms.agrinewsthai.com / www.agrinewsthai.com
   "vars": {
     "CMS_SOURCE": "wordpress",
+    "SITE_NOINDEX": "1",
     "CMS_URL": "https://cms.agrinewsthai.com",
     "MEDIA_URL": "https://files.agrinewsthai.com"
   },

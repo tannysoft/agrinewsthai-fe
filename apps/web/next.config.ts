@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "i2.wp.com" },
     ],
   },
+  async headers() {
+    // Preview hosts (SITE_NOINDEX=1) must not compete with www in search.
+    if (process.env.SITE_NOINDEX !== "1") return [];
+    return [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }];
+  },
   async rewrites() {
     return [
       // Rank Math-style paginated post sitemaps — /post-sitemap{N}.xml →

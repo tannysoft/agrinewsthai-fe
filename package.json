@@ -12,8 +12,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "deploy:cms": "pnpm --filter @agrinewsthai/cms deploy",
-    "deploy:web": "pnpm --filter @agrinewsthai/web deploy",
+    "deploy:cms": "pnpm --filter @agrinewsthai/cms run deploy",
+    "deploy:web": "pnpm --filter @agrinewsthai/web run deploy",
     "migrate:wp": "pnpm --filter @agrinewsthai/cms migrate:wp"
   },
   "devDependencies": {
