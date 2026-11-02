@@ -386,9 +386,9 @@ function resizedSrc(img: string): string {
   // The resized WebP copies the CMS keeps next to every image (lib/image-sizes.ts).
   const copy = (w: number) => resolveMediaKey(sizeKey(key, w));
   const srcset = Object.values(IMAGE_SIZES).map((w) => `${copy(w)} ${w}w`).join(", ");
-  return img
-    .replace(/\s(srcset|sizes)=(["']).*?\2/gi, "")
-    .replace(/\ssrc=(["'])(.*?)\1/i, ` src="${copy(IMAGE_SIZES.large)}" srcset="${srcset}" sizes="(max-width: 800px) 100vw, 760px"`);
+  // WebP copies for current browsers; the original JPG/PNG for the rest.
+  const tag = img.replace(/\s(srcset|sizes)=(["']).*?\2/gi, "").replace(src, original);
+  return `<picture><source type="image/webp" srcset="${srcset}" sizes="(max-width: 800px) 100vw, 760px" />${tag}</picture>`;
 }
 
 /** Target widths for the size names pages ask for (CMS sizes: lib/image-sizes.ts). */
@@ -396,7 +396,15 @@ const TARGET_WIDTH = { medium: 320, medium_large: 768, large: 1280, full: Infini
 // WordPress crops these to fixed shapes; they'd distort in a srcset.
 const CROPPED = new Set(["thumbnail", "post-thumbnail"]);
 
-export type FeaturedImage = { src: string; srcSet?: string; width: number; height: number; alt: string };
+export type FeaturedImage = {
+  src: string;
+  srcSet?: string;
+  /** srcSet is WebP: `src` then points at the original JPG/PNG for browsers without WebP. */
+  webp?: boolean;
+  width: number;
+  height: number;
+  alt: string;
+};
 
 /**
  * Cover image of a story: the copy closest to the requested size plus a
@@ -425,6 +433,9 @@ export function getFeaturedImage(
   const target = TARGET_WIDTH[size];
   const pick = copies.find((c) => c.width >= target) ?? copies[copies.length - 1];
   const srcSet = copies.map((c) => `${c.source_url} ${c.width}w`).join(", ");
+  // CMS copies are WebP; keep the original as the fallback <img src>.
+  if (copies.every((c) => /\.webp(\?|$)/i.test(c.source_url)))
+    return { src: original.source_url, srcSet, webp: true, width: pick.width, height: pick.height, alt };
   return { src: pick.source_url, srcSet, width: pick.width, height: pick.height, alt };
 }
 

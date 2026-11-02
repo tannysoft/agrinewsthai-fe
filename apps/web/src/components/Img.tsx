@@ -1,9 +1,10 @@
 import type { FeaturedImage } from "@/lib/wp";
 
 /**
- * A plain <img> straight from the media domain, with the CMS's resized
- * copies as srcset (no Next.js image optimizer). `fill` covers its
- * positioned parent like next/image's fill.
+ * A plain <img> straight from the media domain (no Next.js image optimizer).
+ * CMS images come as <picture>: WebP copies for current browsers, the
+ * original JPG/PNG for those without WebP. `fill` covers the positioned
+ * parent like next/image's fill.
  */
 export function Img({
   img,
@@ -18,12 +19,12 @@ export function Img({
   fill?: boolean;
   className?: string;
 }) {
-  return (
+  const tag = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={img.src}
-      srcSet={img.srcSet}
-      sizes={img.srcSet ? sizes : undefined}
+      srcSet={img.webp ? undefined : img.srcSet}
+      sizes={img.srcSet && !img.webp ? sizes : undefined}
       alt={img.alt}
       width={img.width}
       height={img.height}
@@ -32,5 +33,12 @@ export function Img({
       decoding="async"
       className={`${fill ? "absolute inset-0 h-full w-full" : ""} ${className}`.trim()}
     />
+  );
+  if (!img.webp) return tag;
+  return (
+    <picture>
+      <source type="image/webp" srcSet={img.srcSet} sizes={sizes} />
+      {tag}
+    </picture>
   );
 }

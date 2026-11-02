@@ -61,7 +61,8 @@ CMS สร้างรูปย่อเป็น WebP ตามขนาดท�
 
 - อัปโหลดใหม่ใน CMS: สร้างให้อัตโนมัติด้วย Cloudflare Images binding
 - รูปเดิมที่ย้ายมา: `pnpm migrate:wp --steps=sizes` (ย่อด้วย sharp บนเครื่อง แล้วอัปโหลดเข้า R2)
-- หน้าเว็บใช้ `<img srcset>` เรียกไฟล์จาก files.agrinewsthai.com ตรง ๆ ไม่ผ่าน Next Image
+- หน้าเว็บใช้ `<picture>` เรียกไฟล์จาก files.agrinewsthai.com ตรง ๆ ไม่ผ่าน Next Image: WebP สำหรับ browser ปัจจุบัน และไฟล์ต้นฉบับ JPG/PNG เป็น fallback สำหรับ browser ที่ไม่รองรับ WebP
+- ไฟล์ต้นฉบับเก็บไว้เสมอ ไม่ถูกแก้หรือลบ
 
 ## ย้ายข้อมูลจาก WordPress
 
