@@ -96,12 +96,11 @@ export function newsArticleSchema(
       .replace(/\u00a0/g, " ")
       .replace(/\s+/g, " ")
       .trim();
-  const img =
-    rankMath?.ogImage ||
-    getFeaturedImage(post, "large")?.src ||
-    SITE_LOGO_RASTER;
-  const imgW = rankMath?.ogImageWidth ?? 1200;
-  const imgH = rankMath?.ogImageHeight ?? 675;
+  // Same image and size as the page's og:image (see generateMetadata in the article page).
+  const featured = getFeaturedImage(post, "large");
+  const img = rankMath?.ogImage || featured?.src || SITE_LOGO_RASTER;
+  const imgW = rankMath?.ogImageWidth ?? featured?.width;
+  const imgH = rankMath?.ogImageHeight ?? featured?.height;
   const byline = getBylineName(post);
   const isEditorial = byline === "กองบรรณาธิการ";
   const category = getPrimaryCategory(post);
@@ -127,8 +126,7 @@ export function newsArticleSchema(
     image: {
       "@type": "ImageObject",
       url: img,
-      width: imgW,
-      height: imgH,
+      ...(imgW && imgH ? { width: imgW, height: imgH } : {}),
     },
     // Login names ("opabo") are not shown publicly; credit the newsroom instead.
     author: isEditorial

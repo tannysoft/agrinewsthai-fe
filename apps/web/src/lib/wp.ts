@@ -127,6 +127,8 @@ export async function getPosts(params: {
   fields?: string[];
   offset?: number;
   after?: string;
+  /** Payload only: stories by one author (/author/{slug}). */
+  authorId?: number;
 } = {}) {
   if (USE_PAYLOAD) {
     // A `fields` list means a light query (sitemaps, counters): ids, dates, categories.
@@ -483,10 +485,26 @@ export function getAuthor(post: WPPost): WPAuthor | null {
  * only show the author when it looks like a real display name (Thai script or
  * a space); otherwise credit the editorial team.
  */
+/** A display name worth printing: Thai script or a full name, not a login like "opabo". */
+export const isRealName = (name?: string | null) =>
+  Boolean(name && (/[\u0E00-\u0E7F]/.test(name.trim()) || name.trim().includes(" ")));
+
 export function getBylineName(post: WPPost): string {
   const name = getAuthor(post)?.name?.trim();
-  if (name && (/[\u0E00-\u0E7F]/.test(name) || name.includes(" "))) return name;
-  return "กองบรรณาธิการ";
+  return name && isRealName(name) ? name : "กองบรรณาธิการ";
+}
+
+/** /author/{slug} when the byline is a real person, else null. */
+export function getAuthorHref(post: WPPost): string | null {
+  const a = getAuthor(post);
+  return USE_PAYLOAD && a?.slug && isRealName(a.name) ? `/author/${a.slug}` : null;
+}
+
+/** Author archive; Payload only (the WordPress REST API hides users). */
+export async function getAuthorBySlug(slug: string) {
+  if (!USE_PAYLOAD) return null;
+  const a = await cms.findAuthorBySlug(slug);
+  return a && isRealName(a.name) ? a : null;
 }
 
 export function formatThaiDate(iso: string): string {

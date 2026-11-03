@@ -190,6 +190,7 @@ export type PostQuery = {
   search?: string;
   slug?: string;
   tagId?: number;
+  authorId?: number;
   orderby?: "date" | "modified" | "relevance" | "title";
   order?: "asc" | "desc";
   sticky?: boolean;
@@ -210,10 +211,14 @@ export async function findPosts(q: PostQuery) {
   if (q.include?.length) and.push({ id: { in: q.include } });
   if (q.slug) and.push({ slug: { equals: safeDecode(q.slug) } });
   if (q.tagId) and.push({ tags: { in: [q.tagId] } });
+  if (q.authorId) and.push({ author: { equals: q.authorId } });
   if (q.sticky !== undefined) and.push({ sticky: { equals: q.sticky } });
   // WordPress-style `after` has no zone and means UTC.
   if (q.after) and.push({ publishedAt: { greater_than: new Date(/Z$|[+-]\d\d:\d\d$/.test(q.after) ? q.after : `${q.after}Z`).toISOString() } });
-  if (q.search) and.push({ or: [{ title: { like: q.search } }, { excerpt: { like: q.search } }] });
+  // Headline, standfirst and body, like WordPress search. A plain scan of the
+  // rendered HTML: ~0.5–1 s on D1 for 15k stories, and results are cached.
+  if (q.search)
+    and.push({ or: [{ title: { like: q.search } }, { excerpt: { like: q.search } }, { contentHtml: { like: q.search } }] });
 
   const perPage = q.perPage ?? 10;
   const sort = `${q.order === "asc" ? "" : "-"}${SORT[q.orderby ?? "date"]}`;
@@ -337,6 +342,23 @@ export async function countPosts(where: Where = {}) {
 }
 
 // ---------- taxonomies ----------
+
+/** Author archive (/author/{slug}); null for unknown users and those who don't show a byline. */
+export async function findAuthorBySlug(slug: string): Promise<{ id: number; name: string; slug: string; description: string } | null> {
+  const res = await cms<FindResult<PUser & { bio?: string | null }>>(
+    "/users",
+    {
+      where: { slug: { equals: safeDecode(slug) } },
+      limit: 1,
+      depth: 0,
+      select: { name: true, slug: true, showByline: true, bio: true },
+    },
+    ["users"]
+  );
+  const u = res?.docs[0];
+  if (!u || !u.showByline) return null;
+  return { id: u.id, name: u.name, slug: u.slug, description: u.bio ?? "" };
+}
 
 export async function findCategories(opts: { exclude?: number[] } = {}): Promise<WPCategory[]> {
   const res = await cms<FindResult<PTerm>>(

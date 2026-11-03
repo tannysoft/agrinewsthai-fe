@@ -54,11 +54,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-/** Know-how: full-text search inside the evergreen desks, merged newest-first. */
+/**
+ * Know-how: search inside the evergreen desks, merged newest-first. Only
+ * stories with the term in the headline count — a mango piece that mentions
+ * durian in passing isn't durian know-how.
+ */
 async function knowledgePosts(queries: string[], categoryIds: number[]) {
   if (!categoryIds.length) return [] as WPPost[];
   const lists = await Promise.all(
-    queries.map((q) => getPosts({ perPage: 6, search: q, orderby: "date", categories: categoryIds }).then((r) => r.data))
+    queries.map((q) =>
+      getPosts({ perPage: 12, search: q, orderby: "date", categories: categoryIds }).then((r) =>
+        r.data.filter((p) => stripHtml(p.title.rendered).includes(q)).slice(0, 6)
+      )
+    )
   );
   const seen = new Set<number>();
   return lists

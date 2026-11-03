@@ -7,6 +7,7 @@ import {
   formatRelative,
   formatThaiDateTime,
   getBylineName,
+  getAuthorHref,
   getExcerpt,
   getFeaturedImage,
   getPostById,
@@ -143,6 +144,7 @@ export default async function PostPage({ params }: Props) {
   const topic = topicForTags(tags.map((t) => t.name));
   const mins = readingTime(post.content.rendered);
   const published = post.date_gmt + "Z";
+  const authorHref = getAuthorHref(post);
   const modified = post.modified_gmt ? post.modified_gmt + "Z" : post.modified;
   // Only show "updated" when the edit came well after publishing.
   const wasUpdated = new Date(modified).getTime() - new Date(published).getTime() > 60 * 60 * 1000;
@@ -192,7 +194,11 @@ export default async function PostPage({ params }: Props) {
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line pb-5">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-ink-3">
-              <span className="font-semibold text-ink">{getBylineName(post)}</span>
+              {authorHref ? (
+                <Link href={authorHref} className="font-semibold text-ink hover:text-leaf">{getBylineName(post)}</Link>
+              ) : (
+                <span className="font-semibold text-ink">{getBylineName(post)}</span>
+              )}
               <MetaSep />
               <time dateTime={published}>{formatThaiDateTime(published)}</time>
               {wasUpdated && (
