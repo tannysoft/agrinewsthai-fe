@@ -341,9 +341,11 @@ export async function countPosts(where: Where = {}) {
 export async function findCategories(opts: { exclude?: number[] } = {}): Promise<WPCategory[]> {
   const res = await cms<FindResult<PTerm>>(
     "/categories",
-    { limit: 100, depth: 0, sort: "order", where: opts.exclude?.length ? { id: { not_in: opts.exclude } } : {} },
+    { pagination: false, depth: 0, sort: "order", where: opts.exclude?.length ? { id: { not_in: opts.exclude } } : {} },
     ["categories"],
-    3600
+    // Same window as the rest of the content, so a category added straight
+    // in the database (not through the CMS hooks) shows within 5 minutes.
+    300
   );
   const docs = res?.docs ?? [];
   const counts = await Promise.all(docs.map((c) => countPosts({ categories: { in: [c.id] } })));
