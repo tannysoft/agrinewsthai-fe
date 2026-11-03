@@ -33,7 +33,8 @@ export const Posts: CollectionConfig = {
     delete: ownPostsOrEditor,
   },
   versions: {
-    drafts: { autosave: { interval: 3000 } },
+    // Autosave hides the Save draft button by default; editors want both.
+    drafts: { autosave: { interval: 3000, showSaveDraftButton: true } },
     maxPerDoc: 25,
   },
   hooks: {
