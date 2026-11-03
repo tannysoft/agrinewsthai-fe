@@ -1,6 +1,6 @@
 import { rssResponse } from "@/lib/rss";
 
-export const revalidate = 600;
+export const revalidate = 900;
 
 export async function GET(_req: Request, { params }: { params: Promise<{ category: string }> }) {
   const { category } = await params;

@@ -14,7 +14,7 @@ import {
   tagCategoryToCollection,
 } from "@/lib/schema";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 type Props = { params: Promise<{ slug: string }> };
 

@@ -24,7 +24,7 @@ import { PostCard } from "@/components/PostCard";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL, breadcrumbSchema } from "@/lib/schema";
 
-export const revalidate = 600;
+export const revalidate = 900;
 export const dynamicParams = false;
 
 export function generateStaticParams() {

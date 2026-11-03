@@ -33,7 +33,7 @@ import {
   newsArticleSchema,
 } from "@/lib/schema";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 type Props = { params: Promise<{ category: string; id: string }> };
 

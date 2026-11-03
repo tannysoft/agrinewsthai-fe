@@ -19,7 +19,7 @@ import { PostCard, Thumb } from "@/components/PostCard";
 import { SectionHeader, SproutIcon } from "@/components/SectionHeader";
 import { PriceWidget } from "@/components/PriceWidget";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },

@@ -3,7 +3,7 @@ import { SITE_ORIGIN, categorySlugMap, postPath } from "@/lib/sitemap-xml";
 import { SITE_NAME } from "@/lib/schema";
 
 // Google News reads this often; keep it fresh.
-export const revalidate = 300;
+export const revalidate = 900;
 
 type NewsPost = { id: number; date_gmt: string; title: { rendered: string }; categories?: number[] };
 

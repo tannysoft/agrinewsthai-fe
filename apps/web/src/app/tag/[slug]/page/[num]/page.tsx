@@ -5,7 +5,7 @@ import { PostCard } from "@/components/PostCard";
 import { Pagination } from "@/components/Pagination";
 import { ArchiveHeader } from "@/components/ArchiveHeader";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 type Props = { params: Promise<{ slug: string; num: string }> };
 

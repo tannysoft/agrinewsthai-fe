@@ -78,7 +78,7 @@ const POPULATE = {
   users: { name: true, slug: true, showByline: true },
 };
 
-async function cms<T>(path: string, query: Record<string, unknown>, tags: string[], revalidate = 300): Promise<T | null> {
+async function cms<T>(path: string, query: Record<string, unknown>, tags: string[], revalidate = 900): Promise<T | null> {
   const qs = stringify(query, { addQueryPrefix: true, encode: true });
   const res = await fetch(`${CMS_URL}/api${path}${qs}`, { next: { revalidate, tags } });
   if (res.status === 404) return null;
@@ -343,9 +343,8 @@ export async function findCategories(opts: { exclude?: number[] } = {}): Promise
     "/categories",
     { pagination: false, depth: 0, sort: "order", where: opts.exclude?.length ? { id: { not_in: opts.exclude } } : {} },
     ["categories"],
-    // Same window as the rest of the content, so a category added straight
-    // in the database (not through the CMS hooks) shows within 5 minutes.
-    300
+    // Same window as the rest of the content; CMS saves clear it at once.
+    900
   );
   const docs = res?.docs ?? [];
   const counts = await Promise.all(docs.map((c) => countPosts({ categories: { in: [c.id] } })));
