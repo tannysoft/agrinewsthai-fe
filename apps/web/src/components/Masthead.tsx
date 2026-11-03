@@ -8,6 +8,7 @@ import type { WPCategory } from "@/lib/wp";
 // Same order as the original site's main menu
 const PRIMARY_SLUGS = [
   "news",
+  "trade-investment",
   "domestic-animal",
   "soil-and-water",
   "large-farm",

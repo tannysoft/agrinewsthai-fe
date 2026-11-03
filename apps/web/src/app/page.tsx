@@ -25,9 +25,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-// Every category, in the same order as the original homepage.
+// Every category, in the same order as the original homepage, plus
+// การค้า/การลงทุน right after ข่าวเกษตร.
 const HOME_CATEGORY_SLUGS = [
   "news",
+  "trade-investment",
   "domestic-animal",
   "soil-and-water",
   "large-farm",
@@ -176,6 +178,9 @@ export default async function HomePage() {
           </div>
         </Band>
       )}
+
+      {/* การค้า/การลงทุน: the second-most prominent desk, full width on a tint */}
+      <WideDesk desk={desk("trade-investment")} tinted />
 
       <Pair left={desk("domestic-animal")} right={desk("soil-and-water")} />
 

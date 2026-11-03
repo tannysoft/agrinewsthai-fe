@@ -8,6 +8,11 @@ export const CATEGORY_COPY: Record<string, { title?: string; description: string
     description:
       "ข่าวเกษตรล่าสุดทุกวัน นโยบายกระทรวงเกษตรฯ ราคาพืชผล มาตรการช่วยเหลือเกษตรกร และความเคลื่อนไหวในพื้นที่ทั่วประเทศ",
   },
+  "trade-investment": {
+    title: "ข่าวการค้า การลงทุน ภาคเกษตร",
+    description:
+      "ข่าวการค้าและการลงทุนภาคเกษตร ส่งออก-นำเข้า ตลาดต่างประเทศ ข้อตกลงการค้า และโอกาสลงทุนในธุรกิจเกษตรและอาหาร",
+  },
   "domestic-animal": {
     title: "ข่าวปศุสัตว์",
     description:
