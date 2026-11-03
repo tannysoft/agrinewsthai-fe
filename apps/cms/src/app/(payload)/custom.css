@@ -1,8 +1,11 @@
 /* Admin UI in Noto Sans Thai (same as the website's headings and menu). */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap');
+/* Story body in the editor: Google Sans (has Thai). One @import only: the bundler drops extra ones. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Google+Sans:wght@400;500;700&display=swap');
 
 :root {
   --font-body: 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Payload's rich-text editor sets its content in --font-serif (Georgia by default). */
+  --font-serif: 'Google Sans', 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 html,
@@ -38,4 +41,11 @@ b {
 .list-title-link:focus-visible {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* Story body (editor + version diff): normal weight, no extra letter-spacing for Thai. */
+.rich-text-lexical .editor-container,
+.lexical-diff .field-diff-content .html-diff {
+  font-weight: 400;
+  letter-spacing: 0;
 }
