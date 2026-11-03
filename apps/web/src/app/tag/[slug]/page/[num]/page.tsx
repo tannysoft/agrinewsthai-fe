@@ -53,7 +53,7 @@ export default async function TagPaginatedPage({ params }: Props) {
           ))}
         </div>
 
-        <Pagination currentPage={page} totalPages={Math.min(totalPages, 50)} basePath={`/tag/${slug}`} />
+        <Pagination currentPage={page} totalPages={totalPages} basePath={`/tag/${slug}`} />
       </section>
     </>
   );

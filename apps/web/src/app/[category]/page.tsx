@@ -80,7 +80,7 @@ export default async function CategoryPage({ params }: Props) {
           </>
         )}
 
-        <Pagination currentPage={page} totalPages={Math.min(totalPages, 50)} basePath={`/${slug}`} />
+        <Pagination currentPage={page} totalPages={totalPages} basePath={`/${slug}`} />
       </section>
     </>
   );
