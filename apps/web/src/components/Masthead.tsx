@@ -29,6 +29,17 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
   const setOpen = (v: boolean) => setOpenedOn(v ? pathname : null);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  // Once the full masthead scrolls away, a one-line bar takes its place.
+  const headerRef = useRef<HTMLElement>(null);
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setCompact(!e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -57,7 +68,8 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="sticky top-0 z-40 bg-paper/95 backdrop-blur border-b border-line">
+    <>
+    <header ref={headerRef} className="relative z-40 bg-paper border-b border-line">
       <div className="mx-auto max-w-[1400px] px-4 md:px-6">
         <div className="flex items-center gap-4 h-16 md:h-20">
           <Link href="/" className="shrink-0" aria-label="เรื่องเล่าข่าวเกษตร หน้าแรก">
@@ -110,6 +122,39 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
           </ul>
         </div>
       </nav>
+    </header>
+
+    {/* One-line bar while scrolled: logo, sections, search. */}
+    <div
+      inert={!compact}
+      className={`fixed inset-x-0 top-0 z-40 bg-paper/95 backdrop-blur border-b border-line shadow-sm transition-transform duration-200 ${
+        compact ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
+      <div className="mx-auto max-w-[1400px] px-4 md:px-6 flex items-center gap-3 h-14">
+        <Link href="/" className="shrink-0" aria-label="เรื่องเล่าข่าวเกษตร หน้าแรก">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="เรื่องเล่าข่าวเกษตร" width={904} height={311} className="h-8 w-auto" />
+        </Link>
+        <nav aria-label="หมวดหมู่หลัก (แถบย่อ)" className="flex-1 min-w-0 font-heading">
+          <ul className="scroll-row flex items-center overflow-x-auto">
+            {primary.map((c) => (
+              <li key={c.id} className="shrink-0">
+                <NavLink href={`/${c.slug}`} label={c.name} active={isActive(`/${c.slug}`)} />
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="shrink-0 h-9 w-9 grid place-items-center rounded-full border border-line text-ink-2 hover:border-leaf hover:text-leaf transition-colors"
+          aria-label="ค้นหาและเมนู"
+        >
+          <SearchIcon className="h-[17px] w-[17px]" />
+        </button>
+      </div>
+    </div>
 
       {open && (
         <div
@@ -188,7 +233,7 @@ export function Masthead({ categories }: { categories: WPCategory[] }) {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
 

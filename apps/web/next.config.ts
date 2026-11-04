@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
   // Images are plain <img> tags pointing at resized copies on the media
   // domain (WordPress sizes, or the CMS's own — packages/shared/src/image-sizes.ts).
   images: { unoptimized: true },
+  // Build-time pages all query the CMS (one D1 database). Fewer at once, and
+  // retries, keep the full-text searches from overloading it mid-build.
+  experimental: {
+    cpus: 4,
+    staticGenerationMaxConcurrency: 2,
+    staticGenerationRetryCount: 3,
+  },
   // Workspace package shipped as TypeScript source.
   transpilePackages: ["@agrinewsthai/shared"],
   async headers() {

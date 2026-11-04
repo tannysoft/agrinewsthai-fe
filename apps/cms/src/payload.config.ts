@@ -102,12 +102,24 @@ export default buildConfig({
       uploadsCollection: 'media',
       generateTitle: ({ doc }) => (doc as { title?: string; name?: string }).title ?? (doc as { name?: string }).name ?? '',
       generateDescription: ({ doc }) => (doc as { excerpt?: string; description?: string }).excerpt ?? (doc as { description?: string }).description ?? '',
-      generateURL: ({ doc, collectionSlug }) => {
-        const d = doc as { id?: number; slug?: string }
+      // `doc` is the form data (no id); the document id comes separately.
+      generateURL: async ({ doc, id, collectionSlug, req }) => {
+        const d = doc as { slug?: string; primaryCategory?: unknown; categories?: unknown[] }
         if (collectionSlug === 'categories') return `${WEB_URL}/${d.slug}`
         if (collectionSlug === 'tags') return `${WEB_URL}/tag/${d.slug}`
         if (collectionSlug === 'pages') return `${WEB_URL}/${d.slug}`
-        return `${WEB_URL}/news/${d.id}`
+        if (!id) return WEB_URL
+        // Posts live at /{primary category}/{id}, like the website builds them.
+        const ref = d.primaryCategory ?? d.categories?.[0]
+        const catId = ref && typeof ref === 'object' ? (ref as { id?: number }).id : ref
+        let category = 'news'
+        if (catId) {
+          const cat = await req.payload
+            .findByID({ collection: 'categories', id: catId as number, depth: 0, select: { slug: true }, req })
+            .catch((): null => null)
+          if (cat?.slug) category = cat.slug
+        }
+        return `${WEB_URL}/${category}/${id}`
       },
       // Rank Math fields kept from WordPress.
       fields: ({ defaultFields }) => [

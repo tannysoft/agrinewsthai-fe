@@ -119,6 +119,8 @@ export async function getPosts(params: {
   exclude?: number | number[];
   include?: number[];
   search?: string;
+  /** Payload only: search story bodies too (search page). */
+  searchBody?: boolean;
   slug?: string;
   orderby?: "date" | "modified" | "relevance" | "title";
   order?: "asc" | "desc";

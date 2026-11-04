@@ -80,7 +80,19 @@ const POPULATE = {
 
 async function cms<T>(path: string, query: Record<string, unknown>, tags: string[], revalidate = 900): Promise<T | null> {
   const qs = stringify(query, { addQueryPrefix: true, encode: true });
-  const res = await fetch(`${CMS_URL}/api${path}${qs}`, { next: { revalidate, tags } });
+  const url = `${CMS_URL}/api${path}${qs}`;
+  // Under load (builds, heavy full-text LIKE) a request can drop or 5xx: retry twice.
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 500 * attempt));
+    try {
+      res = await fetch(url, { next: { revalidate, tags } });
+      if (res.status < 500) break;
+    } catch (err) {
+      if (attempt === 2) throw err;
+    }
+  }
+  if (!res) throw new Error(`CMS unreachable: ${path}${qs}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`CMS ${res.status}: ${path}${qs}`);
   return (await res.json()) as T;
@@ -188,6 +200,8 @@ export type PostQuery = {
   exclude?: number | number[];
   include?: number[];
   search?: string;
+  /** Also search story bodies (slow full scan): the search page only. */
+  searchBody?: boolean;
   slug?: string;
   tagId?: number;
   authorId?: number;
@@ -215,10 +229,14 @@ export async function findPosts(q: PostQuery) {
   if (q.sticky !== undefined) and.push({ sticky: { equals: q.sticky } });
   // WordPress-style `after` has no zone and means UTC.
   if (q.after) and.push({ publishedAt: { greater_than: new Date(/Z$|[+-]\d\d:\d\d$/.test(q.after) ? q.after : `${q.after}Z`).toISOString() } });
-  // Headline, standfirst and body, like WordPress search. A plain scan of the
-  // rendered HTML: ~0.5–1 s on D1 for 15k stories, and results are cached.
-  if (q.search)
-    and.push({ or: [{ title: { like: q.search } }, { excerpt: { like: q.search } }, { contentHtml: { like: q.search } }] });
+  // Headline and standfirst; the search page adds the body like WordPress.
+  // The body is a plain scan of 15k stories' HTML (~1 s on D1), and many at
+  // once queue up the whole database, so related-news boxes skip it.
+  if (q.search) {
+    const or: Where[] = [{ title: { like: q.search } }, { excerpt: { like: q.search } }];
+    if (q.searchBody) or.push({ contentHtml: { like: q.search } });
+    and.push({ or });
+  }
 
   const perPage = q.perPage ?? 10;
   const sort = `${q.order === "asc" ? "" : "-"}${SORT[q.orderby ?? "date"]}`;

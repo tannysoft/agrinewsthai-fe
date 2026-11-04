@@ -309,7 +309,7 @@ export default async function PostPage({ params }: Props) {
               </section>
             )}
           {/* Only the short part sticks, so nothing in the sidebar is ever out of reach. */}
-          <div className="space-y-8 lg:sticky lg:top-36">
+          <div className="space-y-8 lg:sticky lg:top-20">
             <PriceWidgetMini limit={5} />
             <PreferredSourceCard />
           </div>

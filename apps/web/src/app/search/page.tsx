@@ -23,7 +23,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const page = Math.max(1, Number(sp.page ?? "1") || 1);
 
   const { data: posts, total, totalPages } = q
-    ? await getPosts({ perPage: 12, page, search: q, orderby: "relevance" })
+    ? await getPosts({ perPage: 12, page, search: q, searchBody: true, orderby: "relevance" })
     : { data: [], total: 0, totalPages: 0 };
 
   return (
